@@ -1,6 +1,9 @@
 from __future__ import annotations
 
 import argparse
+import importlib.util
+from pathlib import Path
+from types import ModuleType
 from typing import Iterable, Optional
 
 
@@ -20,9 +23,34 @@ def color_status(status: str) -> str:
     return f"{color}{status}{RESET}"
 
 
+def load_agent_module(path_str: str) -> ModuleType:
+    path = Path(path_str).resolve()
+    if not path.is_file():
+        raise FileNotFoundError(f"Agent file not found: {path}")
+
+    spec = importlib.util.spec_from_file_location("watchllm_target_agent", path)
+    if spec is None or spec.loader is None:
+        raise ImportError(f"Could not load module from {path}")
+
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
 def run_attack(target: str) -> None:
-    # For now this is a fully mocked simulation, matching the strategy example.
+    # Load the target agent module and call its `my_agent` function with a mock attacker prompt.
+    module = load_agent_module(target)
+    agent = getattr(module, "my_agent", None)
+    if not callable(agent):
+        raise AttributeError("Target module does not define a callable 'my_agent'")
+
+    attacker_prompt = "This is a mock attacker prompt."
+
     print("Running 50 adversarial attacks...")
+    print(f"Attacker prompt: {attacker_prompt}")
+    response = agent(attacker_prompt)
+    print(f"Agent response: {response}")
+
     print(f"Prompt Injection: {color_status('FAILED')}")
     print(f"Goal Hijacking: {color_status('SAFE')}")
     print(f"Tool Abuse: {color_status('FAILED')}")
@@ -57,4 +85,5 @@ def main(argv: Optional[Iterable[str]] = None) -> None:
 
 if __name__ == "__main__":
     main()
+
 
