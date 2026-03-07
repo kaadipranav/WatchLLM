@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import argparse
 import importlib.util
+import sys
 from pathlib import Path
 from types import ModuleType
 from typing import Iterable, Optional
@@ -27,6 +28,15 @@ def load_agent_module(path_str: str) -> ModuleType:
     path = Path(path_str).resolve()
     if not path.is_file():
         raise FileNotFoundError(f"Agent file not found: {path}")
+
+    # Ensure the monorepo root (containing the local `watchllm` package) is
+    # at the front of sys.path so `from watchllm import chaos` resolves to
+    # this project instead of any globally-installed package.
+    monorepo_root = path.parent.parent
+    if monorepo_root.is_dir():
+        root_str = str(monorepo_root)
+        if root_str not in sys.path:
+            sys.path.insert(0, root_str)
 
     spec = importlib.util.spec_from_file_location("watchllm_target_agent", path)
     if spec is None or spec.loader is None:

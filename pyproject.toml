@@ -1,0 +1,18 @@
+[build-system]
+requires = ["setuptools>=69", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "watchllm"
+version = "0.1.0"
+description = "WatchLLM monorepo (SDK and CLI)"
+requires-python = ">=3.10"
+dependencies = []
+
+[project.scripts]
+watchllm = "watchllm.cli.main:main"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["watchllm*"]
+
