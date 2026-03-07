@@ -292,7 +292,7 @@ Files to edit: watchllm/dashboard/components/
 GROUP H — INFRASTRUCTURE / CONFIG
 ================================================================================
 
-[ ] H1 [P2] wrangler.toml for Cloudflare Workers
+[x] H1 [P2] wrangler.toml for Cloudflare Workers
         - Currently missing — needed to deploy chaos_worker.ts
         - Define: name, main, compatibility_date, r2_buckets binding (TRACES_BUCKET)
         - Define: vars for NEXT_PUBLIC_SUPABASE_URL (non-secret)
