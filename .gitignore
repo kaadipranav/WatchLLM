@@ -1,0 +1,11 @@
+__pycache__/
+.pytest_cache/
+.venv/
+env/
+venv/
+.DS_Store
+
+# Local environment files
+.env
+.env.local
+
