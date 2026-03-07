@@ -1,0 +1,339 @@
+================================================================================
+WATCHLLM — GAP TRACKER
+Last updated: 2026-03-07 (rev 2)
+Repo root: d:\PRANAV APPS\WatchLLM - Chaos Monkey for AI Agents\
+================================================================================
+
+Legend: [P1] = must-have before spec is met
+        [P2] = should-have (correctness / security)
+        [P3] = nice-to-have / polish
+        [ ]  = not started  [~] = partial  [x] = done
+
+================================================================================
+GROUP A — API LAYER (all routes from context doc §8)
+================================================================================
+
+Files to create/edit: watchllm/api/ (new route files), wire to FastAPI app
+
+[ ] A1 [P1] POST /api/register-agent
+        - Validate sdk_key against projects table
+        - Compute agent fingerprint (SHA-256 of system_prompt + tools)
+        - Upsert agents row if fingerprint is new (or return existing agent_id)
+        - Return { agent_id }
+        - Must use SUPABASE_SERVICE_ROLE_KEY server-side only
+
+[ ] A2 [P1] POST /api/simulate
+        - Validate sdk_key → resolve project_id + agent_id
+        - Parse config body: { categories, num_runs, max_turns }
+        - Insert simulations row (status: 'queued')
+        - Return { simulation_id } immediately (async from here)
+        - Trigger Orchestrator Worker with simulation_id (Cloudflare Workers API call)
+
+[ ] A3 [P1] GET /api/simulation/:id/status
+        - Read simulations row by id
+        - Return { status, progress: 0-100 }
+        - Auth: only the project owner can query their simulation
+
+[ ] A4 [P1] POST /api/simulation/:id/response
+        - Receive { run_id, response, latency_ms } from SDK
+        - Body must be validated (run_id must exist in sim_runs for this simulation_id)
+        - Return { next_prompt } or { done: true }
+        ! RACE CONDITION RISK (see A4-RC below)
+
+[ ] A4-RC [P2] Run ordering validation on POST /api/simulation/:id/response
+        - Risk: with 6 parallel Attack Workers, two workers can race to write
+          responses for the same run_id, corrupting the trace
+        - Each run_id must encode or reference: simulation_id + category + turn number
+        - On receipt, validate that response.turn == expected_turn for that run_id
+        - Reject out-of-order responses with 409 Conflict
+        - Store pending_turn per run_id in Supabase sim_runs or a lightweight KV
+
+[ ] A5 [P1] GET /api/simulation/:id/report
+        - Read R2 reports/{simulation_id}/summary.json
+        - Auth: project owner only
+        - Return parsed JSON
+
+[ ] A6 [P1] GET /api/simulation/:id/replay/:run
+        - Read R2 traces/{simulation_id}/{run_id}/full_trace.json.gz
+        - Decompress gzip, return JSON
+        - Auth: project owner only
+        - This is already called by FailureReplayViewer.tsx — must exist before
+          dashboard works at all
+
+[ ] A7 [P1] POST /api/webhooks/stripe
+        - Verify Stripe webhook signature (Stripe-Signature header)
+        - Handle checkout.session.completed → upgrade tier in users table
+        - Handle customer.subscription.deleted → downgrade to 'free'
+
+[ ] A8 [P1] POST /api/webhooks/razorpay
+        - Verify Razorpay webhook signature (X-Razorpay-Signature header)
+        - Same tier upgrade/downgrade logic as Stripe webhook
+
+[ ] A11 [P2] POST /api/simulation/:id/cancel
+        - Set simulations.status = 'cancelled' in Supabase
+        - Orchestrator Worker polls simulations.status at the start of each
+          fan-out iteration; if 'cancelled', terminates all pending Attack Workers
+        - Attack Workers also check status before starting each turn; abort if cancelled
+        - Return { ok: true } immediately (cancel is eventually consistent)
+        - Auth: project owner only
+
+[ ] A12 [P2] Rate limiting on POST /api/simulate
+        - Track simulation launches per user per hour in Supabase or Cloudflare KV
+        - Free tier  → 3 simulations/hour
+        - Pro tier   → 20 simulations/hour
+        - Team tier  → unlimited
+        - Return 429 Too Many Requests with Retry-After header when exceeded
+        - Purpose: protects Groq, Anthropic, and Worker compute costs
+
+[ ] A9 [P2] Auth middleware on all non-webhook routes
+        - Verify Clerk session token (Authorization: Bearer <token>)
+        - Inject user_id into request context
+        - Prevent cross-project data access (user can only see their own simulations)
+
+[x] A10 [P2] Input validation on all routes
+        - Reject malformed UUIDs, unknown category names, out-of-range num_runs
+        - Use Pydantic models (already in stack) for all request bodies
+        - Implemented via strict Pydantic schemas in watchllm/api/schemas.py
+          and typed UUID path params on simulation endpoints
+
+================================================================================
+GROUP B — WORKER ORCHESTRATION
+================================================================================
+
+Files to edit/create: watchllm/worker/chaos_worker.ts + new orchestrator_worker.ts
+
+[ ] B1 [P1] Parent Orchestrator Worker
+        - Triggered by POST /api/simulate after simulation row is created
+        - Reads agent config from Supabase (agents table)
+        - Fans out one Attack Worker invocation per category from config.categories
+        - Waits for all 6 to complete (Promise.all or Durable Objects)
+        - Aggregates results: compute overall severity_score (weighted average or max)
+        - Writes R2 reports/{simulation_id}/summary.json
+        - Writes R2 reports/{simulation_id}/replay_manifest.json (ordered failure list)
+        - Updates simulations row: status='completed', severity_score, completed_at,
+          total_runs, failed_runs
+        - On any worker error → update simulations.status = 'failed'
+
+[ ] B2 [P1] Attack Worker — update simulations row per run
+        - Currently the worker inserts sim_runs rows but NEVER touches simulations
+        - After each run: increment simulations.total_runs (and failed_runs if failed)
+        - This is what feeds the dashboard progress bar
+        - Use Supabase RPC or PATCH with increment logic to avoid race conditions
+
+[ ] B3 [P1] R2 reports/{simulation_id}/summary.json schema
+        - Per context §7: aggregated scores per category
+        - Shape: { simulation_id, categories: { prompt_injection: { runs, failures, avg_severity }, ... } }
+
+[ ] B4 [P1] R2 reports/{simulation_id}/replay_manifest.json schema
+        - Per context §7: ordered list of failures for dashboard replay
+        - Shape: { simulation_id, failures: [{ run_id, category, severity, r2_trace_key }] }
+
+[ ] B5 [P2] 30-second timeout on target agent fetch
+        - callTargetAgent() has no AbortSignal/timeout
+        - Add: const controller = new AbortController(); setTimeout(() => controller.abort(), 30_000)
+        - Pass signal to fetch()
+        - On abort: mark run as failed with explanation "Target agent timed out"
+
+[ ] B7 [P2] Category batching per Attack Worker
+        - Current design: 6 workers × 1 run each → high startup overhead at scale
+        - Improved design: 6 workers × (num_runs / 6) runs each
+          e.g. 1000 runs → each worker handles ~166 runs sequentially before exiting
+        - Workers already loop internally; change the outer dispatch to pass
+          a run_count per worker instead of spinning up a new worker per run
+        - Benefits: less Worker invocation overhead, better cost efficiency,
+          more turns per seed prompt context
+        - Orchestrator change: pass { category, run_count, start_index } per worker
+
+[ ] B6 [P2] Explicit error logging in Worker
+        - On Groq failure, Anthropic failure, R2 write failure, Supabase write failure:
+          log structured error with simulation_id + run_id + category
+        - Workers: use console.error() — Cloudflare surfaces these in Workers Tail
+
+================================================================================
+GROUP C — SDK
+================================================================================
+
+File to edit: watchllm/sdk/chaos.py
+
+[ ] C1 [P1] Real agent registration via POST /api/register-agent
+        - Remove mock-agent-123
+        - On first invocation, POST to {WATCHLLM_API_URL}/api/register-agent
+          with { sdk_key, system_prompt, model, tools, agent_fingerprint }
+        - Store returned agent_id in memory for the session
+        - Requires httpx (or requests) as a dependency — add to pyproject.toml
+
+[ ] C2 [P1] Intercept first outbound LLM call to capture metadata
+        - The decorator must capture system_prompt, model name, tools[]
+          either from function signature/docstring or a declarative field
+        - Define a clear capture mechanism (e.g. @chaos(key=..., purpose=..., tools=[...]))
+        - This is needed before any real registration can work
+
+[ ] C3 [P1] Polling /api/simulation/{simulation_id}/status every 500ms
+        - After registration, SDK should poll this endpoint
+        - Print live progress or block until completed
+        - On status='completed': print link to failure report
+
+[ ] C4 [P2] SDK error handling
+        - If registration fails (network error, 401, 429): print warning and proceed
+          without crashing the user's agent
+        - Never let SDK errors break the wrapped function
+
+================================================================================
+GROUP D — CLERK WEBHOOK
+================================================================================
+
+File to edit: watchllm/api/clerk_webhook.py
+
+[ ] D1 [P2] Verify Clerk webhook signature
+        - Read CLERK_WEBHOOK_SECRET from env
+        - Verify svix-signature header using the svix Python library
+        - Reject requests with invalid signatures (return 401)
+        - Add svix to dependencies
+
+[ ] D2 [P2] Handle user.created and user.updated events
+        - Parse event_type from payload
+        - On user.created: INSERT into users (id=uuid, clerk_id, email, tier='free')
+        - On user.updated: UPDATE users SET email=... WHERE clerk_id=...
+        - Only run these writes server-side (SUPABASE_SERVICE_ROLE_KEY)
+        - Ignore unknown event types gracefully (return 200)
+
+================================================================================
+GROUP E — CLI
+================================================================================
+
+File to edit: watchllm/cli/main.py
+
+[ ] E1 [P2] Wire CLI to real API instead of mocks
+        - run_attack() currently prints hardcoded results
+        - Should call POST /api/simulate, then poll GET /api/simulation/:id/status
+        - Stream progress to terminal while running
+        - Print final report URL on completion
+
+[ ] E2 [P2] Fail fast on missing env vars
+        - Before running: check WATCHLLM_API_KEY (or read from ~/.watchllm/config)
+        - Print actionable error if missing, exit 2
+
+[ ] E3 [P3] `watchllm simulate` sub-command
+        - New sub-command that calls /api/simulate and streams progress
+        - Different from `watchllm test`: simulate is for interactive use,
+          test is for CI exit-code gating
+
+[ ] E4 [P3] `watchllm doctor` health-check command
+        - Check all required env vars are set
+        - Ping Supabase URL for connectivity
+        - Ping WatchLLM API /health endpoint (create a simple health route too)
+        - Print pass/fail per check
+
+[ ] E5 [P2] Fix misleading docs/quickstart.md
+        - Currently tells CI to set GROQ_API_KEY + ANTHROPIC_API_KEY as secrets
+          for the CLI job — but the CLI never uses those (the Worker does)
+        - Replace with: WATCHLLM_API_KEY + NEXT_PUBLIC_APP_URL
+        - Make clear that the CLI calls the API, not the LLMs directly
+
+================================================================================
+GROUP F — DATABASE / SCHEMA
+================================================================================
+
+[ ] F1 [P1] Create Supabase schema SQL migration file
+        - File: supabase/migrations/001_initial_schema.sql
+        - Exact tables from context §6: users, projects, agents, simulations, sim_runs
+        - Include indexes: simulations(agent_id), sim_runs(simulation_id), projects(sdk_key)
+        - Include RLS policies: users can only SELECT/UPDATE their own rows
+        - Enable Supabase Realtime on simulations and sim_runs tables
+
+[ ] F2 [P2] RLS policies (Row Level Security)
+        - simulations: SELECT/UPDATE WHERE user_id = auth.uid()
+        - sim_runs: SELECT via JOIN to simulations WHERE user_id = auth.uid()
+        - agents: SELECT via JOIN to projects WHERE user_id = auth.uid()
+        - projects: all ops WHERE user_id = auth.uid()
+        - Service role key bypasses RLS — only use it in Workers + server-side API
+
+================================================================================
+GROUP G — DASHBOARD
+================================================================================
+
+Files to edit: watchllm/dashboard/components/
+
+[ ] G1 [P3] Link live failure cards to FailureReplayViewer
+        - SimulationProgressView.tsx renders failure cards but they're not clickable
+        - Add onClick handler that sets selected run_id → render FailureReplayViewer
+          with that run_id alongside (or below) SimulationProgressView
+
+[ ] G5 [P3] "Suggested Fix" in FailureReplayViewer
+        - After each failure explanation, render a "Suggested Fix" block
+        - Source: pass the category + explanation to a lightweight prompt
+          (can reuse the claude-haiku judge call or a separate cheap Groq call)
+        - Example output for prompt_injection:
+            "Add an instruction guard: if any prompt asks to ignore previous
+             instructions, explicitly refuse the request before proceeding."
+        - This turns the tool from diagnostic-only → diagnostic + assistant
+        - Store suggested_fix in the JudgeResult schema and in sim_runs.explanation
+          (or as a separate column sim_runs.suggested_fix) so it only costs one
+          LLM call at judge time, not on every dashboard load
+        - Never generate fixes for rule_triggered=true runs (no judge ran)
+
+[ ] G2 [P3] Attack category matrix
+        - Show a 6-row grid (one per category) with: run count, failure count,
+          avg severity, color-coded status bar
+        - Data sourced from R2 reports/{simulation_id}/summary.json via
+          GET /api/simulation/:id/report
+
+[ ] G3 [P2] Fix deprecated supabase.removeChannel()
+        - watchllm/dashboard/components/SimulationProgressView.tsx line ~85
+        - Current: supabase.removeChannel(channel)
+        - Correct: channel.unsubscribe()
+
+[ ] G4 [P2] Never use service role key in frontend
+        - watchllm/dashboard/lib/supabaseClient.ts uses NEXT_PUBLIC_SUPABASE_ANON_KEY
+          which is correct — keep this
+        - Confirm nowhere in dashboard components is SUPABASE_SERVICE_ROLE_KEY used
+
+================================================================================
+GROUP H — INFRASTRUCTURE / CONFIG
+================================================================================
+
+[ ] H1 [P2] wrangler.toml for Cloudflare Workers
+        - Currently missing — needed to deploy chaos_worker.ts
+        - Define: name, main, compatibility_date, r2_buckets binding (TRACES_BUCKET)
+        - Define: vars for NEXT_PUBLIC_SUPABASE_URL (non-secret)
+        - Define: secrets for GROQ_API_KEY, ANTHROPIC_API_KEY, SUPABASE_SERVICE_ROLE_KEY
+
+[ ] H2 [P2] .env.example file
+        - All 20 env vars from context §12 listed with blank values
+        - Never commit actual keys
+
+[ ] H3 [P3] Sentry instrumentation
+        - Add Sentry init to FastAPI app (api layer)
+        - Add Sentry init to Next.js dashboard (if applicable)
+        - Standard error capture + performance tracing
+
+================================================================================
+SUGGESTED WORK ORDER
+================================================================================
+
+Phase 1 — Foundation (nothing works without these):
+  F1 → A9 → A10 → D1 → D2 → H1 → H2
+
+Phase 2 — Core engine (the actual product):
+  B1 → B2 → B3 → B4 → B5 → B7 → A2 → A3 → A4 → A4-RC → A5 → A6
+
+Phase 3 — SDK (developer experience):
+  C2 → C1 → C3 → C4 → A1
+
+Phase 4 — Safety / billing protection:
+  A11 → A12 → A7 → A8 → F2 → G4 → G3
+
+Phase 5 — CLI & polish:
+  E2 → E1 → E5 → E3 → E4 → G1 → G5 → G2 → H3
+
+================================================================================
+END OF GAP TRACKER
+================================================================================
+
+1. F1  →  Create the Supabase schema (001_initial_schema.sql)
+2. A9  →  Auth middleware (protects every route)
+3. A10 →  Input validation (Pydantic models)
+4. D1  →  Clerk webhook verification
+5. D2  →  Clerk user sync (users table)
+6. H1  →  wrangler.toml + Cloudflare secrets
+7. H2  →  .env.example
