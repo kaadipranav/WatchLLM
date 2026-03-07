@@ -184,13 +184,13 @@ GROUP D — CLERK WEBHOOK
 
 File to edit: watchllm/api/clerk_webhook.py
 
-[ ] D1 [P2] Verify Clerk webhook signature
+[x] D1 [P2] Verify Clerk webhook signature
         - Read CLERK_WEBHOOK_SECRET from env
         - Verify svix-signature header using the svix Python library
         - Reject requests with invalid signatures (return 401)
         - Add svix to dependencies
 
-[ ] D2 [P2] Handle user.created and user.updated events
+[x] D2 [P2] Handle user.created and user.updated events
         - Parse event_type from payload
         - On user.created: INSERT into users (id=uuid, clerk_id, email, tier='free')
         - On user.updated: UPDATE users SET email=... WHERE clerk_id=...
