@@ -1,9 +1,17 @@
+type WorkerR2Bucket = {
+  put(
+    key: string,
+    value: string | ArrayBuffer,
+    options?: { httpMetadata?: { contentType?: string; contentEncoding?: string } }
+  ): Promise<unknown>;
+};
+
 export interface Env {
   GROQ_API_KEY: string;
   ANTHROPIC_API_KEY: string;
   NEXT_PUBLIC_SUPABASE_URL: string;
   SUPABASE_SERVICE_ROLE_KEY: string;
-  TRACES_BUCKET: R2Bucket; // R2 binding for bucket `watchllm-traces`
+  TRACES_BUCKET: WorkerR2Bucket; // R2 binding for bucket `watchllm-traces`
 }
 
 type ConversationTurn = {
@@ -46,6 +54,14 @@ type SimRunInsertPayload = {
 
 const DEFAULT_MAX_TURNS = 5;
 const COUNTER_UPDATE_MAX_RETRIES = 5;
+const TARGET_AGENT_TIMEOUT_MS = 30_000;
+
+class TargetAgentTimeoutError extends Error {
+  constructor(message = "Target agent timed out") {
+    super(message);
+    this.name = "TargetAgentTimeoutError";
+  }
+}
 
 function supabaseAuthHeaders(env: Env): HeadersInit {
   return {
@@ -283,12 +299,23 @@ async function callTargetAgent(
   targetUrl: string,
   attackerPrompt: string
 ): Promise<string> {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), TARGET_AGENT_TIMEOUT_MS);
+
   const response = await fetch(targetUrl, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
     },
     body: JSON.stringify({ input: attackerPrompt }),
+    signal: controller.signal,
+  }).catch((err: any) => {
+    if (err?.name === "AbortError") {
+      throw new TargetAgentTimeoutError();
+    }
+    throw err;
+  }).finally(() => {
+    clearTimeout(timeoutId);
   });
 
   if (!response.ok) {
@@ -505,10 +532,61 @@ export default {
           category
         );
 
-        const targetResponse = await callTargetAgent(
-          targetUrl,
-          attackerPrompt
-        );
+        let targetResponse: string;
+        try {
+          targetResponse = await callTargetAgent(targetUrl, attackerPrompt);
+        } catch (err: any) {
+          if (err instanceof TargetAgentTimeoutError) {
+            const timeoutResult: JudgeResult = {
+              failed: true,
+              severity: 4,
+              category,
+              explanation: "Target agent timed out",
+              rule_triggered: true,
+            };
+
+            conversation.push({
+              attacker: attackerPrompt,
+              target: "[target-agent-timeout]",
+              turn,
+            });
+
+            const traceKey = `traces/${simulationId}/${runId}/full_trace.json.gz`;
+            const fullTrace = {
+              simulation_id: simulationId,
+              run_id: runId,
+              purpose,
+              category,
+              conversation,
+              result: timeoutResult,
+            };
+            const compressed = await gzipJson(fullTrace);
+            await env.TRACES_BUCKET.put(traceKey, compressed, {
+              httpMetadata: {
+                contentType: "application/json",
+                contentEncoding: "gzip",
+              },
+            });
+
+            await insertSimRunAndIncrement(env, {
+              id: runId,
+              simulation_id: simulationId,
+              category,
+              turn_count: conversation.length,
+              failed: true,
+              severity: timeoutResult.severity,
+              rule_triggered: true,
+              explanation: timeoutResult.explanation,
+              r2_trace_key: traceKey,
+            });
+
+            return new Response(JSON.stringify(timeoutResult), {
+              status: 200,
+              headers: { "Content-Type": "application/json" },
+            });
+          }
+          throw err;
+        }
 
         conversation.push({
           attacker: attackerPrompt,

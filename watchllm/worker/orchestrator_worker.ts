@@ -107,8 +107,17 @@ function maxSeverity(simRuns: SimRunRow[]): number {
   return simRuns.reduce((max, row) => Math.max(max, Number(row.severity) || 0), 0);
 }
 
-function buildSummaryReport(simulationId: string, simRuns: SimRunRow[]) {
+function buildSummaryReport(
+  simulationId: string,
+  selectedCategories: string[],
+  simRuns: SimRunRow[]
+) {
   const categoryMap = new Map<string, { runs: number; failures: number; totalSeverity: number }>();
+
+  // Initialize all configured categories so summary has deterministic keys.
+  for (const category of selectedCategories) {
+    categoryMap.set(category, { runs: 0, failures: 0, totalSeverity: 0 });
+  }
 
   for (const row of simRuns) {
     if (!categoryMap.has(row.category)) {
@@ -133,7 +142,6 @@ function buildSummaryReport(simulationId: string, simRuns: SimRunRow[]) {
 
   return {
     simulation_id: simulationId,
-    generated_at: new Date().toISOString(),
     categories,
   };
 }
@@ -146,12 +154,11 @@ function buildReplayManifest(simulationId: string, simRuns: SimRunRow[]) {
       run_id: row.id,
       category: row.category,
       severity: row.severity,
-      r2_trace_key: row.r2_trace_key,
+      r2_trace_key: row.r2_trace_key ?? "",
     }));
 
   return {
     simulation_id: simulationId,
-    generated_at: new Date().toISOString(),
     failures,
   };
 }
@@ -266,7 +273,7 @@ export default {
         `/rest/v1/sim_runs?simulation_id=eq.${simulationId}&select=id,category,failed,severity,r2_trace_key`
       );
 
-      const summary = buildSummaryReport(simulationId, simRuns);
+      const summary = buildSummaryReport(simulationId, categories, simRuns);
       const replayManifest = buildReplayManifest(simulationId, simRuns);
       const summaryKey = `reports/${simulationId}/summary.json`;
       const replayManifestKey = `reports/${simulationId}/replay_manifest.json`;

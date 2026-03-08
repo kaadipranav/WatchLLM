@@ -120,15 +120,15 @@ Files to edit/create: watchllm/worker/chaos_worker.ts + new orchestrator_worker.
         - This is what feeds the dashboard progress bar
         - Use Supabase RPC or PATCH with increment logic to avoid race conditions
 
-[ ] B3 [P1] R2 reports/{simulation_id}/summary.json schema
+[x] B3 [P1] R2 reports/{simulation_id}/summary.json schema
         - Per context §7: aggregated scores per category
         - Shape: { simulation_id, categories: { prompt_injection: { runs, failures, avg_severity }, ... } }
 
-[ ] B4 [P1] R2 reports/{simulation_id}/replay_manifest.json schema
+[x] B4 [P1] R2 reports/{simulation_id}/replay_manifest.json schema
         - Per context §7: ordered list of failures for dashboard replay
         - Shape: { simulation_id, failures: [{ run_id, category, severity, r2_trace_key }] }
 
-[ ] B5 [P2] 30-second timeout on target agent fetch
+[x] B5 [P2] 30-second timeout on target agent fetch
         - callTargetAgent() has no AbortSignal/timeout
         - Add: const controller = new AbortController(); setTimeout(() => controller.abort(), 30_000)
         - Pass signal to fetch()
