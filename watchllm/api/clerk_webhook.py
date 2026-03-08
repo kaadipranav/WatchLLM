@@ -1,8 +1,12 @@
 from __future__ import annotations
 
 import asyncio
+import gzip
+import hashlib
+import hmac
 import json
 import os
+from datetime import datetime, timezone
 from typing import Any
 from urllib import error, parse, request as urllib_request
 from uuid import UUID
@@ -95,6 +99,48 @@ def _supabase_request(
                     status_code=status.HTTP_502_BAD_GATEWAY,
                     detail=f"Supabase write failed with status {response.status}",
                 )
+    except error.HTTPError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail=f"Supabase write failed with status {exc.code}",
+        ) from exc
+    except error.URLError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail="Supabase write failed due to network error",
+        ) from exc
+
+
+def _supabase_request_json(
+    method: str,
+    endpoint: str,
+    body: dict[str, Any] | None,
+    service_role_key: str,
+    prefer: str = "return=representation",
+) -> Any:
+    data = None if body is None else json.dumps(body).encode("utf-8")
+    req = urllib_request.Request(
+        endpoint,
+        data=data,
+        method=method,
+        headers={
+            "Content-Type": "application/json",
+            "apikey": service_role_key,
+            "Authorization": f"Bearer {service_role_key}",
+            "Prefer": prefer,
+        },
+    )
+    try:
+        with urllib_request.urlopen(req, timeout=15) as response:
+            if response.status >= 400:
+                raise HTTPException(
+                    status_code=status.HTTP_502_BAD_GATEWAY,
+                    detail=f"Supabase write failed with status {response.status}",
+                )
+            payload = response.read().decode("utf-8")
+            if not payload:
+                return None
+            return json.loads(payload)
     except error.HTTPError as exc:
         raise HTTPException(
             status_code=status.HTTP_502_BAD_GATEWAY,
@@ -263,6 +309,128 @@ def _compute_progress_percent(status_value: str, total_runs: Any, config: Any) -
     if progress > 100:
         return 100
     return progress
+
+
+def _get_r2_config() -> tuple[str, str, str, str]:
+    account_id = os.getenv("CLOUDFLARE_ACCOUNT_ID")
+    access_key_id = os.getenv("R2_ACCESS_KEY_ID")
+    secret_access_key = os.getenv("R2_SECRET_ACCESS_KEY")
+    bucket_name = os.getenv("R2_BUCKET_NAME", "watchllm-traces")
+
+    if not account_id:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="CLOUDFLARE_ACCOUNT_ID is not configured",
+        )
+    if not access_key_id:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="R2_ACCESS_KEY_ID is not configured",
+        )
+    if not secret_access_key:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="R2_SECRET_ACCESS_KEY is not configured",
+        )
+    if not bucket_name:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="R2_BUCKET_NAME is not configured",
+        )
+
+    return account_id, access_key_id, secret_access_key, bucket_name
+
+
+def _aws_sigv4_sign(key: bytes, msg: str) -> bytes:
+    return hmac.new(key, msg.encode("utf-8"), hashlib.sha256).digest()
+
+
+def _aws_sigv4_signing_key(secret_access_key: str, datestamp: str) -> bytes:
+    k_date = _aws_sigv4_sign(("AWS4" + secret_access_key).encode("utf-8"), datestamp)
+    k_region = _aws_sigv4_sign(k_date, "auto")
+    k_service = _aws_sigv4_sign(k_region, "s3")
+    return _aws_sigv4_sign(k_service, "aws4_request")
+
+
+def _r2_get_object_bytes(object_key: str, not_found_detail: str) -> bytes:
+    account_id, access_key_id, secret_access_key, bucket_name = _get_r2_config()
+
+    host = f"{account_id}.r2.cloudflarestorage.com"
+    encoded_key = parse.quote(object_key, safe="/-_.~")
+    canonical_uri = f"/{bucket_name}/{encoded_key}"
+    endpoint = f"https://{host}{canonical_uri}"
+
+    now = datetime.now(timezone.utc)
+    amz_date = now.strftime("%Y%m%dT%H%M%SZ")
+    date_stamp = now.strftime("%Y%m%d")
+    credential_scope = f"{date_stamp}/auto/s3/aws4_request"
+
+    payload_hash = hashlib.sha256(b"").hexdigest()
+    canonical_headers = (
+        f"host:{host}\n"
+        f"x-amz-content-sha256:{payload_hash}\n"
+        f"x-amz-date:{amz_date}\n"
+    )
+    signed_headers = "host;x-amz-content-sha256;x-amz-date"
+    canonical_request = (
+        "GET\n"
+        f"{canonical_uri}\n"
+        "\n"
+        f"{canonical_headers}\n"
+        f"{signed_headers}\n"
+        f"{payload_hash}"
+    )
+
+    canonical_request_hash = hashlib.sha256(canonical_request.encode("utf-8")).hexdigest()
+    string_to_sign = (
+        "AWS4-HMAC-SHA256\n"
+        f"{amz_date}\n"
+        f"{credential_scope}\n"
+        f"{canonical_request_hash}"
+    )
+
+    signing_key = _aws_sigv4_signing_key(secret_access_key, date_stamp)
+    signature = hmac.new(signing_key, string_to_sign.encode("utf-8"), hashlib.sha256).hexdigest()
+    authorization_header = (
+        "AWS4-HMAC-SHA256 "
+        f"Credential={access_key_id}/{credential_scope}, "
+        f"SignedHeaders={signed_headers}, "
+        f"Signature={signature}"
+    )
+
+    req = urllib_request.Request(
+        endpoint,
+        method="GET",
+        headers={
+            "Host": host,
+            "x-amz-content-sha256": payload_hash,
+            "x-amz-date": amz_date,
+            "Authorization": authorization_header,
+        },
+    )
+    try:
+        with urllib_request.urlopen(req, timeout=20) as response:
+            if response.status >= 400:
+                raise HTTPException(
+                    status_code=status.HTTP_502_BAD_GATEWAY,
+                    detail=f"R2 read failed with status {response.status}",
+                )
+            return response.read()
+    except error.HTTPError as exc:
+        if exc.code == status.HTTP_404_NOT_FOUND:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=not_found_detail,
+            ) from exc
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail=f"R2 read failed with status {exc.code}",
+        ) from exc
+    except error.URLError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail="R2 read failed due to network error",
+        ) from exc
 
 
 def not_implemented_response() -> dict[str, str]:
@@ -521,21 +689,244 @@ async def simulation_status(simulation_id: UUID, request: Request):
 
 
 @app.post("/api/simulation/{simulation_id}/response")
-async def simulation_response(simulation_id: UUID, _payload: SimulationResponseRequest):
-    _ = simulation_id
-    return not_implemented_response()
+async def simulation_response(
+    simulation_id: UUID,
+    _payload: SimulationResponseRequest,
+    request: Request,
+):
+    clerk_id = getattr(request.state, "user_id", None)
+    if not isinstance(clerk_id, str) or not clerk_id:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Missing authenticated user context",
+        )
+
+    supabase_url, service_role_key = _get_supabase_admin_config()
+
+    clerk_id_filter = parse.quote(clerk_id, safe="")
+    users_endpoint = (
+        f"{supabase_url}/rest/v1/users"
+        f"?clerk_id=eq.{clerk_id_filter}&select=id&limit=1"
+    )
+    users = _supabase_fetch_json(users_endpoint, service_role_key)
+    if not isinstance(users, list) or len(users) == 0:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Authenticated user is not provisioned",
+        )
+
+    user_id = users[0].get("id")
+    if not isinstance(user_id, str) or not user_id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Authenticated user is not provisioned",
+        )
+
+    simulation_id_filter = parse.quote(str(simulation_id), safe="")
+    user_id_filter = parse.quote(user_id, safe="")
+    simulation_endpoint = (
+        f"{supabase_url}/rest/v1/simulations"
+        f"?id=eq.{simulation_id_filter}&user_id=eq.{user_id_filter}"
+        f"&select=id,config&limit=1"
+    )
+    simulations = _supabase_fetch_json(simulation_endpoint, service_role_key)
+    if not isinstance(simulations, list) or len(simulations) == 0:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Simulation not found",
+        )
+
+    simulation = simulations[0]
+    config = simulation.get("config")
+    max_turns = 5
+    if isinstance(config, dict):
+        raw_max_turns = config.get("max_turns")
+        if isinstance(raw_max_turns, int) and raw_max_turns > 0:
+            max_turns = raw_max_turns
+
+    run_id_filter = parse.quote(str(_payload.run_id), safe="")
+    sim_run_endpoint = (
+        f"{supabase_url}/rest/v1/sim_runs"
+        f"?id=eq.{run_id_filter}&simulation_id=eq.{simulation_id_filter}"
+        f"&select=id,turn_count&limit=1"
+    )
+    sim_runs = _supabase_fetch_json(sim_run_endpoint, service_role_key)
+    if not isinstance(sim_runs, list) or len(sim_runs) == 0:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="run_id not found for simulation",
+        )
+
+    sim_run = sim_runs[0]
+    current_turn = sim_run.get("turn_count")
+    if not isinstance(current_turn, int) or current_turn < 0:
+        current_turn = 0
+
+    expected_turn = current_turn + 1
+    incoming_turn = _payload.turn if _payload.turn is not None else expected_turn
+    if incoming_turn != expected_turn:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=(
+                f"Out-of-order run response for run_id={_payload.run_id}. "
+                f"Expected turn {expected_turn}, got {incoming_turn}."
+            ),
+        )
+
+    optimistic_patch_endpoint = (
+        f"{supabase_url}/rest/v1/sim_runs"
+        f"?id=eq.{run_id_filter}&simulation_id=eq.{simulation_id_filter}"
+        f"&turn_count=eq.{current_turn}"
+    )
+    updated_rows = _supabase_request_json(
+        "PATCH",
+        optimistic_patch_endpoint,
+        {"turn_count": incoming_turn},
+        service_role_key,
+        prefer="return=representation",
+    )
+    if not isinstance(updated_rows, list) or len(updated_rows) == 0:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Run turn was updated concurrently; retry with latest state",
+        )
+
+    if incoming_turn >= max_turns:
+        return {"done": True}
+
+    return {
+        "next_prompt": (
+            f"Continue run {_payload.run_id} at turn {incoming_turn + 1} "
+            f"for simulation {simulation_id}."
+        )
+    }
 
 
 @app.get("/api/simulation/{simulation_id}/report")
-async def simulation_report(simulation_id: UUID):
-    _ = simulation_id
-    return not_implemented_response()
+async def simulation_report(simulation_id: UUID, request: Request):
+    clerk_id = getattr(request.state, "user_id", None)
+    if not isinstance(clerk_id, str) or not clerk_id:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Missing authenticated user context",
+        )
+
+    supabase_url, service_role_key = _get_supabase_admin_config()
+    clerk_id_filter = parse.quote(clerk_id, safe="")
+    users_endpoint = (
+        f"{supabase_url}/rest/v1/users"
+        f"?clerk_id=eq.{clerk_id_filter}&select=id&limit=1"
+    )
+    users = _supabase_fetch_json(users_endpoint, service_role_key)
+    if not isinstance(users, list) or len(users) == 0:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Authenticated user is not provisioned",
+        )
+
+    user_id = users[0].get("id")
+    if not isinstance(user_id, str) or not user_id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Authenticated user is not provisioned",
+        )
+
+    simulation_id_filter = parse.quote(str(simulation_id), safe="")
+    user_id_filter = parse.quote(user_id, safe="")
+    simulation_endpoint = (
+        f"{supabase_url}/rest/v1/simulations"
+        f"?id=eq.{simulation_id_filter}&user_id=eq.{user_id_filter}"
+        f"&select=id&limit=1"
+    )
+    simulations = _supabase_fetch_json(simulation_endpoint, service_role_key)
+    if not isinstance(simulations, list) or len(simulations) == 0:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Simulation not found",
+        )
+
+    report_key = f"reports/{simulation_id}/summary.json"
+    report_bytes = _r2_get_object_bytes(report_key, "Simulation report not found")
+    try:
+        return json.loads(report_bytes.decode("utf-8"))
+    except json.JSONDecodeError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail="Simulation report is not valid JSON",
+        ) from exc
 
 
 @app.get("/api/simulation/{simulation_id}/replay/{run_id}")
-async def simulation_replay(simulation_id: UUID, run_id: UUID):
-    _ = (simulation_id, run_id)
-    return not_implemented_response()
+async def simulation_replay(simulation_id: UUID, run_id: UUID, request: Request):
+    clerk_id = getattr(request.state, "user_id", None)
+    if not isinstance(clerk_id, str) or not clerk_id:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Missing authenticated user context",
+        )
+
+    supabase_url, service_role_key = _get_supabase_admin_config()
+    clerk_id_filter = parse.quote(clerk_id, safe="")
+    users_endpoint = (
+        f"{supabase_url}/rest/v1/users"
+        f"?clerk_id=eq.{clerk_id_filter}&select=id&limit=1"
+    )
+    users = _supabase_fetch_json(users_endpoint, service_role_key)
+    if not isinstance(users, list) or len(users) == 0:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Authenticated user is not provisioned",
+        )
+
+    user_id = users[0].get("id")
+    if not isinstance(user_id, str) or not user_id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Authenticated user is not provisioned",
+        )
+
+    simulation_id_filter = parse.quote(str(simulation_id), safe="")
+    user_id_filter = parse.quote(user_id, safe="")
+    simulation_endpoint = (
+        f"{supabase_url}/rest/v1/simulations"
+        f"?id=eq.{simulation_id_filter}&user_id=eq.{user_id_filter}"
+        f"&select=id&limit=1"
+    )
+    simulations = _supabase_fetch_json(simulation_endpoint, service_role_key)
+    if not isinstance(simulations, list) or len(simulations) == 0:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Simulation not found",
+        )
+
+    run_id_filter = parse.quote(str(run_id), safe="")
+    sim_run_endpoint = (
+        f"{supabase_url}/rest/v1/sim_runs"
+        f"?id=eq.{run_id_filter}&simulation_id=eq.{simulation_id_filter}"
+        f"&select=id&limit=1"
+    )
+    sim_runs = _supabase_fetch_json(sim_run_endpoint, service_role_key)
+    if not isinstance(sim_runs, list) or len(sim_runs) == 0:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Replay run not found for simulation",
+        )
+
+    trace_key = f"traces/{simulation_id}/{run_id}/full_trace.json.gz"
+    trace_bytes = _r2_get_object_bytes(trace_key, "Replay trace not found")
+
+    try:
+        decompressed = gzip.decompress(trace_bytes)
+    except OSError:
+        decompressed = trace_bytes
+
+    try:
+        return json.loads(decompressed.decode("utf-8"))
+    except json.JSONDecodeError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail="Replay trace is not valid JSON",
+        ) from exc
 
 
 @app.post("/api/simulation/{simulation_id}/cancel")

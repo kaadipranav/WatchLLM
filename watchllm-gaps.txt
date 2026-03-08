@@ -34,13 +34,13 @@ Files to create/edit: watchllm/api/ (new route files), wire to FastAPI app
         - Return { status, progress: 0-100 }
         - Auth: only the project owner can query their simulation
 
-[ ] A4 [P1] POST /api/simulation/:id/response
+[x] A4 [P1] POST /api/simulation/:id/response
         - Receive { run_id, response, latency_ms } from SDK
         - Body must be validated (run_id must exist in sim_runs for this simulation_id)
         - Return { next_prompt } or { done: true }
         ! RACE CONDITION RISK (see A4-RC below)
 
-[ ] A4-RC [P2] Run ordering validation on POST /api/simulation/:id/response
+[x] A4-RC [P2] Run ordering validation on POST /api/simulation/:id/response
         - Risk: with 6 parallel Attack Workers, two workers can race to write
           responses for the same run_id, corrupting the trace
         - Each run_id must encode or reference: simulation_id + category + turn number
@@ -48,12 +48,12 @@ Files to create/edit: watchllm/api/ (new route files), wire to FastAPI app
         - Reject out-of-order responses with 409 Conflict
         - Store pending_turn per run_id in Supabase sim_runs or a lightweight KV
 
-[ ] A5 [P1] GET /api/simulation/:id/report
+[x] A5 [P1] GET /api/simulation/:id/report
         - Read R2 reports/{simulation_id}/summary.json
         - Auth: project owner only
         - Return parsed JSON
 
-[ ] A6 [P1] GET /api/simulation/:id/replay/:run
+[x] A6 [P1] GET /api/simulation/:id/replay/:run
         - Read R2 traces/{simulation_id}/{run_id}/full_trace.json.gz
         - Decompress gzip, return JSON
         - Auth: project owner only
@@ -155,25 +155,25 @@ GROUP C — SDK
 
 File to edit: watchllm/sdk/chaos.py
 
-[ ] C1 [P1] Real agent registration via POST /api/register-agent
+[x] C1 [P1] Real agent registration via POST /api/register-agent
         - Remove mock-agent-123
         - On first invocation, POST to {WATCHLLM_API_URL}/api/register-agent
           with { sdk_key, system_prompt, model, tools, agent_fingerprint }
         - Store returned agent_id in memory for the session
         - Requires httpx (or requests) as a dependency — add to pyproject.toml
 
-[ ] C2 [P1] Intercept first outbound LLM call to capture metadata
+[x] C2 [P1] Intercept first outbound LLM call to capture metadata
         - The decorator must capture system_prompt, model name, tools[]
           either from function signature/docstring or a declarative field
         - Define a clear capture mechanism (e.g. @chaos(key=..., purpose=..., tools=[...]))
         - This is needed before any real registration can work
 
-[ ] C3 [P1] Polling /api/simulation/{simulation_id}/status every 500ms
+[x] C3 [P1] Polling /api/simulation/{simulation_id}/status every 500ms
         - After registration, SDK should poll this endpoint
         - Print live progress or block until completed
         - On status='completed': print link to failure report
 
-[ ] C4 [P2] SDK error handling
+[x] C4 [P2] SDK error handling
         - If registration fails (network error, 401, 429): print warning and proceed
           without crashing the user's agent
         - Never let SDK errors break the wrapped function
@@ -360,6 +360,29 @@ MANUAL TEST CHECKLIST (KEEP UPDATING)
         - completed simulation reports progress=100
         - running simulation progress derives from total_runs / config.num_runs and is clamped 0..100
 
+[x] A4 Simulation response endpoint
+        - valid owner request with existing run_id returns next_prompt before max_turns
+        - when run reaches max_turns returns { done: true }
+        - run_id not linked to simulation_id returns 404
+        - non-owner simulation access returns 404
+
+[x] A4-RC Run ordering conflict handling
+        - if incoming turn != expected turn_count+1 returns 409 Conflict
+        - endpoint performs optimistic update using turn_count filter to prevent double-write races
+        - concurrent write where turn_count changed returns 409 Conflict
+
+[x] A5 Simulation report endpoint
+        - owner can GET /api/simulation/{id}/report and receive parsed summary.json
+        - non-owner or unknown simulation_id returns 404
+        - missing R2 report object returns 404
+        - malformed summary payload returns 502
+
+[x] A6 Simulation replay endpoint
+        - owner can GET /api/simulation/{id}/replay/{run_id} and receive replay JSON
+        - replay requires run_id to belong to simulation_id, otherwise 404
+        - gzip trace payload is decompressed before JSON response
+        - missing trace object returns 404
+
 [x] D1 Clerk webhook signature verification
         - Missing svix-* headers → expect 401
         - Invalid signature → expect 401
@@ -406,3 +429,24 @@ MANUAL TEST CHECKLIST (KEEP UPDATING)
         - set num_runs=1000 and 6 categories -> per-category batches around 166/167
         - confirm orchestrator response includes category_batches + requested_runs
         - total inserted sim_runs equals requested num_runs
+
+[x] C2 SDK metadata capture
+        - first invocation captures system_prompt/model/tools from decorator args when provided
+        - fallback capture uses kwargs/function attributes/docstring when explicit fields are absent
+        - agent_fingerprint is deterministic SHA-256(system_prompt + canonicalized tools)
+
+[x] C1 SDK registration call
+        - first invocation POSTs to {WATCHLLM_API_URL}/api/register-agent with captured metadata
+        - successful registration stores agent_id in-session and on function attribute
+        - mock-agent-123 output is removed
+        - registration failure is logged and wrapped function still executes
+
+[x] C3 SDK status polling
+        - when simulation_id is present (kwargs or return payload), SDK polls /api/simulation/{id}/status every 500ms
+        - polling logs live progress updates and blocks until terminal status
+        - on completed status SDK prints simulation report link
+
+[x] C4 SDK resilience
+        - registration failures are warned and never crash wrapped function
+        - status polling failures are warned and never crash wrapped function
+        - wrapped function result still returns even when SDK network calls fail
