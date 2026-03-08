@@ -22,14 +22,14 @@ Files to create/edit: watchllm/api/ (new route files), wire to FastAPI app
         - Return { agent_id }
         - Must use SUPABASE_SERVICE_ROLE_KEY server-side only
 
-[ ] A2 [P1] POST /api/simulate
+[x] A2 [P1] POST /api/simulate
         - Validate sdk_key → resolve project_id + agent_id
         - Parse config body: { categories, num_runs, max_turns }
         - Insert simulations row (status: 'queued')
         - Return { simulation_id } immediately (async from here)
         - Trigger Orchestrator Worker with simulation_id (Cloudflare Workers API call)
 
-[ ] A3 [P1] GET /api/simulation/:id/status
+[x] A3 [P1] GET /api/simulation/:id/status
         - Read simulations row by id
         - Return { status, progress: 0-100 }
         - Auth: only the project owner can query their simulation
@@ -345,6 +345,20 @@ MANUAL TEST CHECKLIST (KEEP UPDATING)
 [x] A10 Input validation (Pydantic)
         - POST /api/simulate with invalid category → expect 422
         - GET /api/simulation/not-a-uuid/status → expect 422
+
+[x] A2 Simulate endpoint
+        - valid sdk_key for authenticated user creates simulations row with status='queued'
+        - response returns { simulation_id } immediately
+        - simulation row config persists categories/num_runs/max_turns
+        - background trigger attempts Cloudflare worker dispatch with simulation_id
+        - invalid sdk_key or missing agent returns 404
+
+[x] A3 Simulation status endpoint
+        - owner can GET /api/simulation/{id}/status and receive { status, progress }
+        - non-owner or unknown simulation_id returns 404
+        - queued/pending simulation reports progress=0
+        - completed simulation reports progress=100
+        - running simulation progress derives from total_runs / config.num_runs and is clamped 0..100
 
 [x] D1 Clerk webhook signature verification
         - Missing svix-* headers → expect 401
