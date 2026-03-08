@@ -102,7 +102,7 @@ GROUP B — WORKER ORCHESTRATION
 
 Files to edit/create: watchllm/worker/chaos_worker.ts + new orchestrator_worker.ts
 
-[ ] B1 [P1] Parent Orchestrator Worker
+[x] B1 [P1] Parent Orchestrator Worker
         - Triggered by POST /api/simulate after simulation row is created
         - Reads agent config from Supabase (agents table)
         - Fans out one Attack Worker invocation per category from config.categories
@@ -298,7 +298,7 @@ GROUP H — INFRASTRUCTURE / CONFIG
         - Define: vars for NEXT_PUBLIC_SUPABASE_URL (non-secret)
         - Define: secrets for GROQ_API_KEY, ANTHROPIC_API_KEY, SUPABASE_SERVICE_ROLE_KEY
 
-[ ] H2 [P2] .env.example file
+[x] H2 [P2] .env.example file
         - All 20 env vars from context §12 listed with blank values
         - Never commit actual keys
 
