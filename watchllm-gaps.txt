@@ -114,7 +114,7 @@ Files to edit/create: watchllm/worker/chaos_worker.ts + new orchestrator_worker.
           total_runs, failed_runs
         - On any worker error → update simulations.status = 'failed'
 
-[ ] B2 [P1] Attack Worker — update simulations row per run
+[x] B2 [P1] Attack Worker — update simulations row per run
         - Currently the worker inserts sim_runs rows but NEVER touches simulations
         - After each run: increment simulations.total_runs (and failed_runs if failed)
         - This is what feeds the dashboard progress bar

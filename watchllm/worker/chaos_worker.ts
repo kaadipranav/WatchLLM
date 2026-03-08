@@ -26,7 +26,126 @@ type JudgeResult = {
   rule_triggered: boolean;
 };
 
+type SimulationCounterRow = {
+  id: string;
+  total_runs: number | null;
+  failed_runs: number | null;
+};
+
+type SimRunInsertPayload = {
+  id: string;
+  simulation_id: string;
+  category: string;
+  turn_count: number;
+  failed: boolean;
+  severity: number;
+  rule_triggered: boolean;
+  explanation: string;
+  r2_trace_key: string;
+};
+
 const DEFAULT_MAX_TURNS = 5;
+const COUNTER_UPDATE_MAX_RETRIES = 5;
+
+function supabaseAuthHeaders(env: Env): HeadersInit {
+  return {
+    "Content-Type": "application/json",
+    apikey: env.SUPABASE_SERVICE_ROLE_KEY,
+    Authorization: `Bearer ${env.SUPABASE_SERVICE_ROLE_KEY}`,
+  };
+}
+
+async function incrementSimulationCounters(
+  env: Env,
+  simulationId: string,
+  failed: boolean
+): Promise<void> {
+  const simulationIdParam = encodeURIComponent(`eq.${simulationId}`);
+
+  for (let attempt = 0; attempt < COUNTER_UPDATE_MAX_RETRIES; attempt++) {
+    const getUrl = new URL(env.NEXT_PUBLIC_SUPABASE_URL);
+    getUrl.pathname = "/rest/v1/simulations";
+    getUrl.search = `?id=${simulationIdParam}&select=id,total_runs,failed_runs&limit=1`;
+
+    const getResponse = await fetch(getUrl.toString(), {
+      method: "GET",
+      headers: supabaseAuthHeaders(env),
+    });
+
+    if (!getResponse.ok) {
+      throw new Error(
+        `Failed to read simulation counters (${getResponse.status})`
+      );
+    }
+
+    const rows = (await getResponse.json()) as SimulationCounterRow[];
+    if (!Array.isArray(rows) || rows.length === 0) {
+      throw new Error(`Simulation ${simulationId} not found while incrementing counters`);
+    }
+
+    const row = rows[0];
+    const currentTotal = Number(row.total_runs ?? 0);
+    const currentFailed = Number(row.failed_runs ?? 0);
+    const nextTotal = currentTotal + 1;
+    const nextFailed = currentFailed + (failed ? 1 : 0);
+
+    const patchUrl = new URL(env.NEXT_PUBLIC_SUPABASE_URL);
+    patchUrl.pathname = "/rest/v1/simulations";
+    patchUrl.search = `?id=${simulationIdParam}&total_runs=eq.${currentTotal}&failed_runs=eq.${currentFailed}`;
+
+    const patchResponse = await fetch(patchUrl.toString(), {
+      method: "PATCH",
+      headers: {
+        ...supabaseAuthHeaders(env),
+        Prefer: "return=representation",
+      },
+      body: JSON.stringify({
+        total_runs: nextTotal,
+        failed_runs: nextFailed,
+      }),
+    });
+
+    if (!patchResponse.ok) {
+      throw new Error(
+        `Failed to update simulation counters (${patchResponse.status})`
+      );
+    }
+
+    const updated = (await patchResponse.json()) as SimulationCounterRow[];
+    if (Array.isArray(updated) && updated.length > 0) {
+      return;
+    }
+  }
+
+  throw new Error(
+    `Failed to increment simulation counters for ${simulationId} due to concurrent updates`
+  );
+}
+
+async function insertSimRunAndIncrement(
+  env: Env,
+  simRun: SimRunInsertPayload
+): Promise<void> {
+  const supabaseUrl = new URL(env.NEXT_PUBLIC_SUPABASE_URL);
+  supabaseUrl.pathname = "/rest/v1/sim_runs";
+
+  const insertResponse = await fetch(supabaseUrl.toString(), {
+    method: "POST",
+    headers: {
+      ...supabaseAuthHeaders(env),
+      Prefer: "return=minimal",
+    },
+    body: JSON.stringify(simRun),
+  });
+
+  if (!insertResponse.ok) {
+    throw new Error(
+      `Failed to insert sim_run ${simRun.id} (${insertResponse.status})`
+    );
+  }
+
+  await incrementSimulationCounters(env, simRun.simulation_id, simRun.failed);
+}
 
 async function sha256Hex(input: string): Promise<string> {
   const data = new TextEncoder().encode(input);
@@ -427,29 +546,16 @@ export default {
             },
           });
 
-          // Insert lightweight metadata into Supabase sim_runs table
-          const supabaseUrl = new URL(env.NEXT_PUBLIC_SUPABASE_URL);
-          supabaseUrl.pathname = "/rest/v1/sim_runs";
-
-          await fetch(supabaseUrl.toString(), {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              apikey: env.SUPABASE_SERVICE_ROLE_KEY,
-              Authorization: `Bearer ${env.SUPABASE_SERVICE_ROLE_KEY}`,
-              Prefer: "return=minimal",
-            },
-            body: JSON.stringify({
-              id: runId,
-              simulation_id: simulationId,
-              category,
-              turn_count: conversation.length,
-              failed: true,
-              severity: lightweight.severity,
-              rule_triggered: true,
-              explanation: lightweight.explanation,
-              r2_trace_key: traceKey,
-            }),
+          await insertSimRunAndIncrement(env, {
+            id: runId,
+            simulation_id: simulationId,
+            category,
+            turn_count: conversation.length,
+            failed: true,
+            severity: lightweight.severity,
+            rule_triggered: true,
+            explanation: lightweight.explanation,
+            r2_trace_key: traceKey,
           });
 
           // When a run completely fails, anonymize and store in R2 library/{category}/{hash}.json
@@ -512,28 +618,16 @@ export default {
         },
       });
 
-      const supabaseUrl = new URL(env.NEXT_PUBLIC_SUPABASE_URL);
-      supabaseUrl.pathname = "/rest/v1/sim_runs";
-
-      await fetch(supabaseUrl.toString(), {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          apikey: env.SUPABASE_SERVICE_ROLE_KEY,
-          Authorization: `Bearer ${env.SUPABASE_SERVICE_ROLE_KEY}`,
-          Prefer: "return=minimal",
-        },
-        body: JSON.stringify({
-          id: runId,
-          simulation_id: simulationId,
-          category,
-          turn_count: conversation.length,
-          failed: judgeResult.failed,
-          severity: judgeResult.severity,
-          rule_triggered: false,
-          explanation: judgeResult.explanation,
-          r2_trace_key: traceKey,
-        }),
+      await insertSimRunAndIncrement(env, {
+        id: runId,
+        simulation_id: simulationId,
+        category,
+        turn_count: conversation.length,
+        failed: judgeResult.failed,
+        severity: judgeResult.severity,
+        rule_triggered: false,
+        explanation: judgeResult.explanation,
+        r2_trace_key: traceKey,
       });
 
       if (judgeResult.failed) {
