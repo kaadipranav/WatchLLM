@@ -134,7 +134,7 @@ Files to edit/create: watchllm/worker/chaos_worker.ts + new orchestrator_worker.
         - Pass signal to fetch()
         - On abort: mark run as failed with explanation "Target agent timed out"
 
-[ ] B7 [P2] Category batching per Attack Worker
+[x] B7 [P2] Category batching per Attack Worker
         - Current design: 6 workers × 1 run each → high startup overhead at scale
         - Improved design: 6 workers × (num_runs / 6) runs each
           e.g. 1000 runs → each worker handles ~166 runs sequentially before exiting
@@ -144,7 +144,7 @@ Files to edit/create: watchllm/worker/chaos_worker.ts + new orchestrator_worker.
           more turns per seed prompt context
         - Orchestrator change: pass { category, run_count, start_index } per worker
 
-[ ] B6 [P2] Explicit error logging in Worker
+[x] B6 [P2] Explicit error logging in Worker
         - On Groq failure, Anthropic failure, R2 write failure, Supabase write failure:
           log structured error with simulation_id + run_id + category
         - Workers: use console.error() — Cloudflare surfaces these in Workers Tail
@@ -337,3 +337,58 @@ END OF GAP TRACKER
 5. D2  →  Clerk user sync (users table)
 6. H1  →  wrangler.toml + Cloudflare secrets
 7. H2  →  .env.example
+
+================================================================================
+MANUAL TEST CHECKLIST (KEEP UPDATING)
+================================================================================
+
+[x] A10 Input validation (Pydantic)
+        - POST /api/simulate with invalid category → expect 422
+        - GET /api/simulation/not-a-uuid/status → expect 422
+
+[x] D1 Clerk webhook signature verification
+        - Missing svix-* headers → expect 401
+        - Invalid signature → expect 401
+        - Valid signature → expect 200
+
+[x] D2 Clerk webhook user sync
+        - user.created inserts users row (tier='free')
+        - user.updated updates email by clerk_id
+        - unknown event type returns 200 ignored
+
+[x] H1 Wrangler config
+        - npx wrangler deploy --dry-run --config watchllm/wrangler.toml succeeds
+        - bindings include TRACES_BUCKET and NEXT_PUBLIC_SUPABASE_URL
+
+[x] H2 Env example completeness
+        - .env.example includes all context doc env keys with blank values
+
+[x] B1 Orchestrator worker
+        - POST orchestrator with simulation_id updates simulations.status running->completed (or failed)
+        - writes reports/{simulation_id}/summary.json and replay_manifest.json
+
+[x] B2 Attack worker run counters
+        - each sim_runs insert increments simulations.total_runs
+        - failed runs increment simulations.failed_runs
+        - parallel runs do not lose increments
+
+[x] B3 Summary schema
+        - R2 summary.json shape: { simulation_id, categories: { ... } }
+        - no extra top-level fields required by spec
+
+[x] B4 Replay manifest schema
+        - R2 replay_manifest.json shape: { simulation_id, failures: [...] }
+        - failures ordered by severity desc then run_id
+
+[x] B5 Target-agent timeout
+        - target call >30s returns failed run with explanation "Target agent timed out"
+        - timeout run still writes sim_runs row, counters, and trace
+
+[x] B6 Structured error logging
+        - induce Groq/Anthropic/R2/Supabase failures and verify console.error JSON includes:
+          simulation_id, run_id, category, stage, provider, error_message
+
+[x] B7 Category batching
+        - set num_runs=1000 and 6 categories -> per-category batches around 166/167
+        - confirm orchestrator response includes category_batches + requested_runs
+        - total inserted sim_runs equals requested num_runs

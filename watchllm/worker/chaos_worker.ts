@@ -52,6 +52,15 @@ type SimRunInsertPayload = {
   r2_trace_key: string;
 };
 
+type WorkerErrorContext = {
+  stage: string;
+  simulation_id: string;
+  run_id: string;
+  category: string;
+  provider?: "groq" | "anthropic" | "r2" | "supabase" | "target-agent";
+  http_status?: number;
+};
+
 const DEFAULT_MAX_TURNS = 5;
 const COUNTER_UPDATE_MAX_RETRIES = 5;
 const TARGET_AGENT_TIMEOUT_MS = 30_000;
@@ -61,6 +70,30 @@ class TargetAgentTimeoutError extends Error {
     super(message);
     this.name = "TargetAgentTimeoutError";
   }
+}
+
+function toError(err: unknown): Error {
+  if (err instanceof Error) return err;
+  return new Error(String(err));
+}
+
+function logWorkerError(context: WorkerErrorContext, err: unknown): void {
+  const error = toError(err);
+  console.error(
+    JSON.stringify({
+      level: "error",
+      component: "chaos_worker",
+      stage: context.stage,
+      provider: context.provider,
+      simulation_id: context.simulation_id,
+      run_id: context.run_id,
+      category: context.category,
+      http_status: context.http_status,
+      error_name: error.name,
+      error_message: error.message,
+      timestamp: new Date().toISOString(),
+    })
+  );
 }
 
 function supabaseAuthHeaders(env: Env): HeadersInit {
@@ -74,7 +107,8 @@ function supabaseAuthHeaders(env: Env): HeadersInit {
 async function incrementSimulationCounters(
   env: Env,
   simulationId: string,
-  failed: boolean
+  failed: boolean,
+  context: { run_id: string; category: string }
 ): Promise<void> {
   const simulationIdParam = encodeURIComponent(`eq.${simulationId}`);
 
@@ -89,6 +123,17 @@ async function incrementSimulationCounters(
     });
 
     if (!getResponse.ok) {
+      logWorkerError(
+        {
+          stage: "supabase_simulation_counter_read",
+          provider: "supabase",
+          simulation_id: simulationId,
+          run_id: context.run_id,
+          category: context.category,
+          http_status: getResponse.status,
+        },
+        new Error(`Failed to read simulation counters (${getResponse.status})`)
+      );
       throw new Error(
         `Failed to read simulation counters (${getResponse.status})`
       );
@@ -122,6 +167,17 @@ async function incrementSimulationCounters(
     });
 
     if (!patchResponse.ok) {
+      logWorkerError(
+        {
+          stage: "supabase_simulation_counter_update",
+          provider: "supabase",
+          simulation_id: simulationId,
+          run_id: context.run_id,
+          category: context.category,
+          http_status: patchResponse.status,
+        },
+        new Error(`Failed to update simulation counters (${patchResponse.status})`)
+      );
       throw new Error(
         `Failed to update simulation counters (${patchResponse.status})`
       );
@@ -155,12 +211,26 @@ async function insertSimRunAndIncrement(
   });
 
   if (!insertResponse.ok) {
+    logWorkerError(
+      {
+        stage: "supabase_sim_run_insert",
+        provider: "supabase",
+        simulation_id: simRun.simulation_id,
+        run_id: simRun.id,
+        category: simRun.category,
+        http_status: insertResponse.status,
+      },
+      new Error(`Failed to insert sim_run ${simRun.id} (${insertResponse.status})`)
+    );
     throw new Error(
       `Failed to insert sim_run ${simRun.id} (${insertResponse.status})`
     );
   }
 
-  await incrementSimulationCounters(env, simRun.simulation_id, simRun.failed);
+  await incrementSimulationCounters(env, simRun.simulation_id, simRun.failed, {
+    run_id: simRun.id,
+    category: simRun.category,
+  });
 }
 
 async function sha256Hex(input: string): Promise<string> {
@@ -232,7 +302,8 @@ async function generateAttackerPrompt(
   env: Env,
   purpose: string,
   history: ConversationTurn[],
-  category: string
+  category: string,
+  context: { simulation_id: string; run_id: string }
 ): Promise<string> {
   const systemInstruction =
     "You are an adversarial red-teaming agent for an AI chaos testing engine. " +
@@ -265,19 +336,48 @@ async function generateAttackerPrompt(
     ],
   };
 
-  const response = await fetch(
-    "https://api.groq.com/openai/v1/chat/completions",
-    {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${env.GROQ_API_KEY}`,
-        "Content-Type": "application/json",
+  let response: Response;
+  try {
+    response = await fetch(
+      "https://api.groq.com/openai/v1/chat/completions",
+      {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${env.GROQ_API_KEY}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(body),
+      }
+    );
+  } catch (err) {
+    logWorkerError(
+      {
+        stage: "groq_attacker_request",
+        provider: "groq",
+        simulation_id: context.simulation_id,
+        run_id: context.run_id,
+        category,
       },
-      body: JSON.stringify(body),
-    }
-  );
+      err
+    );
+    throw err;
+  }
 
   if (!response.ok) {
+    const err = new Error(
+      `Groq attacker request failed with status ${response.status}`
+    );
+    logWorkerError(
+      {
+        stage: "groq_attacker_request",
+        provider: "groq",
+        simulation_id: context.simulation_id,
+        run_id: context.run_id,
+        category,
+        http_status: response.status,
+      },
+      err
+    );
     throw new Error(
       `Groq attacker request failed with status ${response.status}`
     );
@@ -393,7 +493,8 @@ async function judgeConversation(
   env: Env,
   purpose: string,
   category: string,
-  conversation: ConversationTurn[]
+  conversation: ConversationTurn[],
+  context: { simulation_id: string; run_id: string }
 ): Promise<JudgeResult> {
   const conversationText = conversation
     .map(
@@ -436,17 +537,46 @@ async function judgeConversation(
     ],
   };
 
-  const response = await fetch("https://api.anthropic.com/v1/messages", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "x-api-key": env.ANTHROPIC_API_KEY,
-      "anthropic-version": "2023-06-01",
-    },
-    body: JSON.stringify(body),
-  });
+  let response: Response;
+  try {
+    response = await fetch("https://api.anthropic.com/v1/messages", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "x-api-key": env.ANTHROPIC_API_KEY,
+        "anthropic-version": "2023-06-01",
+      },
+      body: JSON.stringify(body),
+    });
+  } catch (err) {
+    logWorkerError(
+      {
+        stage: "anthropic_judge_request",
+        provider: "anthropic",
+        simulation_id: context.simulation_id,
+        run_id: context.run_id,
+        category,
+      },
+      err
+    );
+    throw err;
+  }
 
   if (!response.ok) {
+    const err = new Error(
+      `Anthropic judge request failed with status ${response.status}`
+    );
+    logWorkerError(
+      {
+        stage: "anthropic_judge_request",
+        provider: "anthropic",
+        simulation_id: context.simulation_id,
+        run_id: context.run_id,
+        category,
+        http_status: response.status,
+      },
+      err
+    );
     throw new Error(
       `Anthropic judge request failed with status ${response.status}`
     );
@@ -529,7 +659,11 @@ export default {
           env,
           purpose,
           conversation,
-          category
+          category,
+          {
+            simulation_id: simulationId,
+            run_id: runId,
+          }
         );
 
         let targetResponse: string;
@@ -561,12 +695,26 @@ export default {
               result: timeoutResult,
             };
             const compressed = await gzipJson(fullTrace);
-            await env.TRACES_BUCKET.put(traceKey, compressed, {
-              httpMetadata: {
-                contentType: "application/json",
-                contentEncoding: "gzip",
-              },
-            });
+            try {
+              await env.TRACES_BUCKET.put(traceKey, compressed, {
+                httpMetadata: {
+                  contentType: "application/json",
+                  contentEncoding: "gzip",
+                },
+              });
+            } catch (r2Err) {
+              logWorkerError(
+                {
+                  stage: "r2_trace_write",
+                  provider: "r2",
+                  simulation_id: simulationId,
+                  run_id: runId,
+                  category,
+                },
+                r2Err
+              );
+              throw r2Err;
+            }
 
             await insertSimRunAndIncrement(env, {
               id: runId,
@@ -617,12 +765,26 @@ export default {
             result: lightweight,
           };
           const compressed = await gzipJson(fullTrace);
-          await env.TRACES_BUCKET.put(traceKey, compressed, {
-            httpMetadata: {
-              contentType: "application/json",
-              contentEncoding: "gzip",
-            },
-          });
+          try {
+            await env.TRACES_BUCKET.put(traceKey, compressed, {
+              httpMetadata: {
+                contentType: "application/json",
+                contentEncoding: "gzip",
+              },
+            });
+          } catch (r2Err) {
+            logWorkerError(
+              {
+                stage: "r2_trace_write",
+                provider: "r2",
+                simulation_id: simulationId,
+                run_id: runId,
+                category,
+              },
+              r2Err
+            );
+            throw r2Err;
+          }
 
           await insertSimRunAndIncrement(env, {
             id: runId,
@@ -651,15 +813,29 @@ export default {
               response: sanitizedResponse,
             };
 
-            await env.TRACES_BUCKET.put(
-              libraryKey,
-              JSON.stringify(libraryPayload),
-              {
-                httpMetadata: {
-                  contentType: "application/json",
+            try {
+              await env.TRACES_BUCKET.put(
+                libraryKey,
+                JSON.stringify(libraryPayload),
+                {
+                  httpMetadata: {
+                    contentType: "application/json",
+                  },
+                }
+              );
+            } catch (r2Err) {
+              logWorkerError(
+                {
+                  stage: "r2_library_write",
+                  provider: "r2",
+                  simulation_id: simulationId,
+                  run_id: runId,
+                  category,
                 },
-              }
-            );
+                r2Err
+              );
+              throw r2Err;
+            }
           }
 
           return new Response(JSON.stringify(lightweight), {
@@ -673,7 +849,11 @@ export default {
         env,
         purpose,
         category,
-        conversation
+        conversation,
+        {
+          simulation_id: simulationId,
+          run_id: runId,
+        }
       );
 
       // Ensure rule_triggered is false when judge runs.
@@ -689,12 +869,26 @@ export default {
         result: judgeResult,
       };
       const compressed = await gzipJson(fullTrace);
-      await env.TRACES_BUCKET.put(traceKey, compressed, {
-        httpMetadata: {
-          contentType: "application/json",
-          contentEncoding: "gzip",
-        },
-      });
+      try {
+        await env.TRACES_BUCKET.put(traceKey, compressed, {
+          httpMetadata: {
+            contentType: "application/json",
+            contentEncoding: "gzip",
+          },
+        });
+      } catch (r2Err) {
+        logWorkerError(
+          {
+            stage: "r2_trace_write",
+            provider: "r2",
+            simulation_id: simulationId,
+            run_id: runId,
+            category,
+          },
+          r2Err
+        );
+        throw r2Err;
+      }
 
       await insertSimRunAndIncrement(env, {
         id: runId,
@@ -722,15 +916,29 @@ export default {
           response: sanitizedResponse,
         };
 
-        await env.TRACES_BUCKET.put(
-          libraryKey,
-          JSON.stringify(libraryPayload),
-          {
-            httpMetadata: {
-              contentType: "application/json",
+        try {
+          await env.TRACES_BUCKET.put(
+            libraryKey,
+            JSON.stringify(libraryPayload),
+            {
+              httpMetadata: {
+                contentType: "application/json",
+              },
+            }
+          );
+        } catch (r2Err) {
+          logWorkerError(
+            {
+              stage: "r2_library_write",
+              provider: "r2",
+              simulation_id: simulationId,
+              run_id: runId,
+              category,
             },
-          }
-        );
+            r2Err
+          );
+          throw r2Err;
+        }
       }
 
       return new Response(JSON.stringify(judgeResult), {
@@ -738,6 +946,15 @@ export default {
         headers: { "Content-Type": "application/json" },
       });
     } catch (err: any) {
+      logWorkerError(
+        {
+          stage: "worker_run",
+          simulation_id: simulationId,
+          run_id: runId,
+          category,
+        },
+        err
+      );
       return new Response(
         JSON.stringify({
           error: String(err?.message ?? err ?? "Unknown error"),

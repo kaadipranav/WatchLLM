@@ -35,7 +35,14 @@ type AttackResult = {
   rule_triggered: boolean;
 };
 
+type CategoryBatch = {
+  category: string;
+  run_count: number;
+  start_index: number;
+};
+
 const DEFAULT_MAX_TURNS = 5;
+const DEFAULT_NUM_RUNS = 1000;
 
 const DEFAULT_CATEGORIES = [
   "prompt_injection",
@@ -100,6 +107,33 @@ function parseCategories(config: SimulationConfig | null): string[] {
     return [...DEFAULT_CATEGORIES];
   }
   return candidate.filter((value) => typeof value === "string" && value.length > 0);
+}
+
+function parseNumRuns(config: SimulationConfig | null): number {
+  const value = config?.num_runs;
+  if (typeof value === "number" && Number.isFinite(value) && value > 0) {
+    return Math.floor(value);
+  }
+  return DEFAULT_NUM_RUNS;
+}
+
+function buildCategoryBatches(categories: string[], numRuns: number): CategoryBatch[] {
+  if (categories.length === 0 || numRuns <= 0) return [];
+
+  const base = Math.floor(numRuns / categories.length);
+  const remainder = numRuns % categories.length;
+  let startIndex = 0;
+
+  return categories.map((category, idx) => {
+    const runCount = base + (idx < remainder ? 1 : 0);
+    const batch: CategoryBatch = {
+      category,
+      run_count: runCount,
+      start_index: startIndex,
+    };
+    startIndex += runCount;
+    return batch;
+  });
 }
 
 function maxSeverity(simRuns: SimRunRow[]): number {
@@ -196,6 +230,27 @@ async function runAttackForCategory(
   return JSON.parse(text) as AttackResult;
 }
 
+async function runCategoryBatch(
+  env: Env,
+  simulationId: string,
+  batch: CategoryBatch,
+  purpose: string,
+  targetAgentUrl: string,
+  maxTurns: number
+): Promise<void> {
+  for (let i = 0; i < batch.run_count; i++) {
+    // Keep one worker per category, but run multiple runs sequentially in that worker context.
+    await runAttackForCategory(
+      env,
+      simulationId,
+      batch.category,
+      purpose,
+      targetAgentUrl,
+      maxTurns
+    );
+  }
+}
+
 export default {
   async fetch(request: Request, env: Env): Promise<Response> {
     if (request.method !== "POST") {
@@ -232,10 +287,12 @@ export default {
       const simulation = simulations[0];
       const config = simulation.config ?? {};
       const categories = parseCategories(config);
+      const numRuns = parseNumRuns(config);
       const maxTurns =
         typeof config.max_turns === "number" && config.max_turns > 0
           ? config.max_turns
           : DEFAULT_MAX_TURNS;
+      const categoryBatches = buildCategoryBatches(categories, numRuns);
 
       const targetAgentUrl = config.target_agent_url;
       if (!targetAgentUrl || typeof targetAgentUrl !== "string") {
@@ -254,13 +311,15 @@ export default {
 
       const purpose = agents[0].system_prompt ?? "General assistant";
 
-      // Fan out one attack worker run per category and await all results.
+      // Fan out one batch worker per category and await all results.
       await Promise.all(
-        categories.map((category) =>
-          runAttackForCategory(
+        categoryBatches
+          .filter((batch) => batch.run_count > 0)
+          .map((batch) =>
+          runCategoryBatch(
             env,
             simulationId,
-            category,
+            batch,
             purpose,
             targetAgentUrl,
             maxTurns
@@ -303,6 +362,8 @@ export default {
           status: "completed",
           simulation_id: simulationId,
           categories,
+          category_batches: categoryBatches,
+          requested_runs: numRuns,
           total_runs: totalRuns,
           failed_runs: failedRuns,
           severity_score: severityScore,
