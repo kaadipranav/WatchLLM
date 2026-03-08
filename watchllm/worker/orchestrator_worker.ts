@@ -33,6 +33,7 @@ type AttackResult = {
   category: string;
   explanation: string;
   rule_triggered: boolean;
+  cancelled?: boolean;
 };
 
 type CategoryBatch = {
@@ -99,6 +100,22 @@ async function supabasePatch(
       `Supabase PATCH ${path} failed with status ${response.status}`
     );
   }
+}
+
+async function isSimulationCancelled(
+  env: Env,
+  simulationId: string
+): Promise<boolean> {
+  const rows = await supabaseGet<Array<Pick<SimulationRow, "id" | "status">>>(
+    env,
+    `/rest/v1/simulations?id=eq.${simulationId}&select=id,status&limit=1`
+  );
+
+  if (!Array.isArray(rows) || rows.length === 0) {
+    throw new Error(`Simulation ${simulationId} not found while checking cancellation`);
+  }
+
+  return rows[0].status === "cancelled";
 }
 
 function parseCategories(config: SimulationConfig | null): string[] {
@@ -239,8 +256,12 @@ async function runCategoryBatch(
   maxTurns: number
 ): Promise<void> {
   for (let i = 0; i < batch.run_count; i++) {
+    if (await isSimulationCancelled(env, simulationId)) {
+      return;
+    }
+
     // Keep one worker per category, but run multiple runs sequentially in that worker context.
-    await runAttackForCategory(
+    const result = await runAttackForCategory(
       env,
       simulationId,
       batch.category,
@@ -248,6 +269,10 @@ async function runCategoryBatch(
       targetAgentUrl,
       maxTurns
     );
+
+    if (result.cancelled) {
+      return;
+    }
   }
 }
 
@@ -270,11 +295,6 @@ export default {
     }
 
     try {
-      // Mark the simulation as running before fan-out begins.
-      await supabasePatch(env, `/rest/v1/simulations?id=eq.${simulationId}`, {
-        status: "running",
-      });
-
       const simulations = await supabaseGet<SimulationRow[]>(
         env,
         `/rest/v1/simulations?id=eq.${simulationId}&select=id,agent_id,status,config`
@@ -285,6 +305,25 @@ export default {
       }
 
       const simulation = simulations[0];
+      if (simulation.status === "cancelled") {
+        return new Response(
+          JSON.stringify({
+            status: "cancelled",
+            simulation_id: simulationId,
+            message: "Simulation was cancelled before fan-out started",
+          }),
+          {
+            status: 200,
+            headers: { "Content-Type": "application/json" },
+          }
+        );
+      }
+
+      // Mark the simulation as running before fan-out begins.
+      await supabasePatch(env, `/rest/v1/simulations?id=eq.${simulationId}`, {
+        status: "running",
+      });
+
       const config = simulation.config ?? {};
       const categories = parseCategories(config);
       const numRuns = parseNumRuns(config);
@@ -311,11 +350,20 @@ export default {
 
       const purpose = agents[0].system_prompt ?? "General assistant";
 
+      const activeBatches: CategoryBatch[] = [];
+      for (const batch of categoryBatches) {
+        if (batch.run_count <= 0) {
+          continue;
+        }
+        if (await isSimulationCancelled(env, simulationId)) {
+          break;
+        }
+        activeBatches.push(batch);
+      }
+
       // Fan out one batch worker per category and await all results.
       await Promise.all(
-        categoryBatches
-          .filter((batch) => batch.run_count > 0)
-          .map((batch) =>
+        activeBatches.map((batch) =>
           runCategoryBatch(
             env,
             simulationId,
@@ -326,6 +374,25 @@ export default {
           )
         )
       );
+
+      if (await isSimulationCancelled(env, simulationId)) {
+        await supabasePatch(env, `/rest/v1/simulations?id=eq.${simulationId}`, {
+          status: "cancelled",
+        });
+
+        return new Response(
+          JSON.stringify({
+            status: "cancelled",
+            simulation_id: simulationId,
+            category_batches: activeBatches,
+            requested_runs: numRuns,
+          }),
+          {
+            status: 200,
+            headers: { "Content-Type": "application/json" },
+          }
+        );
+      }
 
       const simRuns = await supabaseGet<SimRunRow[]>(
         env,

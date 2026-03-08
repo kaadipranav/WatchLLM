@@ -32,12 +32,18 @@ type JudgeResult = {
   category: string;
   explanation: string;
   rule_triggered: boolean;
+  cancelled?: boolean;
 };
 
 type SimulationCounterRow = {
   id: string;
   total_runs: number | null;
   failed_runs: number | null;
+};
+
+type SimulationStatusRow = {
+  id: string;
+  status: string;
 };
 
 type SimRunInsertPayload = {
@@ -102,6 +108,44 @@ function supabaseAuthHeaders(env: Env): HeadersInit {
     apikey: env.SUPABASE_SERVICE_ROLE_KEY,
     Authorization: `Bearer ${env.SUPABASE_SERVICE_ROLE_KEY}`,
   };
+}
+
+async function isSimulationCancelled(
+  env: Env,
+  simulationId: string,
+  context: { run_id: string; category: string }
+): Promise<boolean> {
+  const simulationIdParam = encodeURIComponent(`eq.${simulationId}`);
+  const url = new URL(env.NEXT_PUBLIC_SUPABASE_URL);
+  url.pathname = "/rest/v1/simulations";
+  url.search = `?id=${simulationIdParam}&select=id,status&limit=1`;
+
+  const response = await fetch(url.toString(), {
+    method: "GET",
+    headers: supabaseAuthHeaders(env),
+  });
+
+  if (!response.ok) {
+    logWorkerError(
+      {
+        stage: "supabase_simulation_cancel_read",
+        provider: "supabase",
+        simulation_id: simulationId,
+        run_id: context.run_id,
+        category: context.category,
+        http_status: response.status,
+      },
+      new Error(`Failed to read simulation status (${response.status})`)
+    );
+    throw new Error(`Failed to read simulation status (${response.status})`);
+  }
+
+  const rows = (await response.json()) as SimulationStatusRow[];
+  if (!Array.isArray(rows) || rows.length === 0) {
+    throw new Error(`Simulation ${simulationId} not found while checking cancellation`);
+  }
+
+  return rows[0].status === "cancelled";
 }
 
 async function incrementSimulationCounters(
@@ -655,6 +699,28 @@ export default {
 
     try {
       for (let turn = 0; turn < maxTurns; turn++) {
+        if (
+          await isSimulationCancelled(env, simulationId, {
+            run_id: runId,
+            category,
+          })
+        ) {
+          return new Response(
+            JSON.stringify({
+              failed: false,
+              severity: 0,
+              category,
+              explanation: "Simulation cancelled",
+              rule_triggered: true,
+              cancelled: true,
+            }),
+            {
+              status: 200,
+              headers: { "Content-Type": "application/json" },
+            }
+          );
+        }
+
         const attackerPrompt = await generateAttackerPrompt(
           env,
           purpose,

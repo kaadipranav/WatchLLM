@@ -13,6 +13,7 @@ from uuid import UUID
 from uuid import uuid5, NAMESPACE_URL, uuid4
 
 from fastapi import BackgroundTasks, FastAPI, HTTPException, Request, status
+from fastapi.responses import JSONResponse
 from pydantic import BaseModel, ConfigDict, ValidationError
 from svix.webhooks import Webhook, WebhookVerificationError
 
@@ -286,6 +287,113 @@ def _update_user_email(
     _supabase_request("PATCH", users_endpoint, update_body, service_role_key)
 
 
+def _verify_stripe_signature(raw_body: bytes, stripe_signature: str, secret: str) -> bool:
+    if not stripe_signature:
+        return False
+
+    components: dict[str, list[str]] = {}
+    for part in stripe_signature.split(","):
+        key, sep, value = part.partition("=")
+        if not sep:
+            continue
+        components.setdefault(key.strip(), []).append(value.strip())
+
+    timestamps = components.get("t", [])
+    signatures = components.get("v1", [])
+    if not timestamps or not signatures:
+        return False
+
+    timestamp = timestamps[0]
+    try:
+        timestamp_int = int(timestamp)
+    except ValueError:
+        return False
+
+    # Mirror Stripe's default timestamp tolerance to reduce replay risk.
+    tolerance_seconds = 300
+    now_ts = int(datetime.now(timezone.utc).timestamp())
+    if abs(now_ts - timestamp_int) > tolerance_seconds:
+        return False
+
+    signed_payload = f"{timestamp}.".encode("utf-8") + raw_body
+    expected = hmac.new(secret.encode("utf-8"), signed_payload, hashlib.sha256).hexdigest()
+    return any(hmac.compare_digest(expected, candidate) for candidate in signatures)
+
+
+def _verify_razorpay_signature(raw_body: bytes, razorpay_signature: str, secret: str) -> bool:
+    if not razorpay_signature:
+        return False
+    expected = hmac.new(secret.encode("utf-8"), raw_body, hashlib.sha256).hexdigest()
+    return hmac.compare_digest(expected, razorpay_signature)
+
+
+def _extract_dict(value: Any) -> dict[str, Any]:
+    return value if isinstance(value, dict) else {}
+
+
+def _first_non_empty_str(*values: Any) -> str | None:
+    for value in values:
+        if isinstance(value, str) and value.strip():
+            return value.strip()
+    return None
+
+
+def _resolve_webhook_user_selectors(payload: dict[str, Any]) -> tuple[str | None, str | None]:
+    data = _extract_dict(payload.get("data"))
+    event_obj = _extract_dict(data.get("object"))
+    metadata = _extract_dict(event_obj.get("metadata"))
+    customer_details = _extract_dict(event_obj.get("customer_details"))
+    notes = _extract_dict(event_obj.get("notes"))
+
+    clerk_id = _first_non_empty_str(
+        metadata.get("clerk_id"),
+        notes.get("clerk_id"),
+        event_obj.get("clerk_id"),
+    )
+    email = _first_non_empty_str(
+        customer_details.get("email"),
+        event_obj.get("customer_email"),
+        event_obj.get("email"),
+        metadata.get("email"),
+        notes.get("email"),
+    )
+    return clerk_id, email
+
+
+def _update_user_tier_by_selector(
+    supabase_url: str,
+    service_role_key: str,
+    tier_value: str,
+    clerk_id: str | None,
+    email: str | None,
+) -> bool:
+    if clerk_id:
+        clerk_id_filter = parse.quote(clerk_id, safe="")
+        lookup_endpoint = (
+            f"{supabase_url}/rest/v1/users"
+            f"?clerk_id=eq.{clerk_id_filter}&select=id&limit=1"
+        )
+        user_rows = _supabase_fetch_json(lookup_endpoint, service_role_key)
+        if isinstance(user_rows, list) and len(user_rows) > 0:
+            update_endpoint = f"{supabase_url}/rest/v1/users?clerk_id=eq.{clerk_id_filter}"
+            _supabase_request("PATCH", update_endpoint, {"tier": tier_value}, service_role_key)
+            return True
+
+    if email:
+        email_filter = parse.quote(email, safe="")
+        lookup_endpoint = (
+            f"{supabase_url}/rest/v1/users"
+            f"?email=eq.{email_filter}&select=id&limit=1"
+        )
+        user_rows = _supabase_fetch_json(lookup_endpoint, service_role_key)
+        if isinstance(user_rows, list) and len(user_rows) > 0:
+            update_endpoint = f"{supabase_url}/rest/v1/users?email=eq.{email_filter}"
+            _supabase_request("PATCH", update_endpoint, {"tier": tier_value}, service_role_key)
+            return True
+
+    return False
+
+
 def _compute_progress_percent(status_value: str, total_runs: Any, config: Any) -> int:
     if status_value == "completed":
         return 100
@@ -309,6 +417,49 @@ def _compute_progress_percent(status_value: str, total_runs: Any, config: Any) -
     if progress > 100:
         return 100
     return progress
+
+
+def _normalize_user_tier(raw_tier: Any) -> str:
+    if not isinstance(raw_tier, str):
+        return "free"
+    normalized = raw_tier.strip().lower()
+    if normalized in {"free", "pro", "team"}:
+        return normalized
+    return "free"
+
+
+def _tier_hourly_limit(tier: str) -> int | None:
+    if tier == "free":
+        return 3
+    if tier == "pro":
+        return 20
+    if tier == "team":
+        return None
+    return 3
+
+
+def _parse_iso_datetime(value: Any) -> datetime | None:
+    if not isinstance(value, str) or not value:
+        return None
+
+    normalized = value
+    if normalized.endswith("Z"):
+        normalized = normalized[:-1] + "+00:00"
+
+    try:
+        parsed = datetime.fromisoformat(normalized)
+    except ValueError:
+        return None
+
+    if parsed.tzinfo is None:
+        return parsed.replace(tzinfo=timezone.utc)
+    return parsed.astimezone(timezone.utc)
+
+
+def _compute_agent_fingerprint(system_prompt: str, tools: list[dict[str, Any]]) -> str:
+    canonical_tools = json.dumps(tools, sort_keys=True, separators=(",", ":"))
+    payload = f"{system_prompt}\n{canonical_tools}"
+    return hashlib.sha256(payload.encode("utf-8")).hexdigest()
 
 
 def _get_r2_config() -> tuple[str, str, str, str]:
@@ -528,13 +679,129 @@ async def clerk_webhook(request: Request):
     return {"status": "ok", "event_type": event_type}
 
 
+@app.post("/api/webhooks/stripe")
+async def stripe_webhook(request: Request):
+    raw_body = await request.body()
+    stripe_signature = request.headers.get("Stripe-Signature")
+    stripe_webhook_secret = os.getenv("STRIPE_WEBHOOK_SECRET")
+
+    if not stripe_webhook_secret:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="STRIPE_WEBHOOK_SECRET is not configured",
+        )
+    if not stripe_signature:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Missing Stripe-Signature header",
+        )
+
+    if not _verify_stripe_signature(raw_body, stripe_signature, stripe_webhook_secret):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid Stripe webhook signature",
+        )
+
+    try:
+        payload = json.loads(raw_body.decode("utf-8") or "{}")
+    except json.JSONDecodeError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="Invalid Stripe webhook payload",
+        ) from exc
+
+    event_type = payload.get("type")
+    if event_type not in {"checkout.session.completed", "customer.subscription.deleted"}:
+        return {"status": "ignored", "event_type": event_type}
+
+    tier_target = "pro" if event_type == "checkout.session.completed" else "free"
+    supabase_url, service_role_key = _get_supabase_admin_config()
+    clerk_id, email = _resolve_webhook_user_selectors(payload)
+    updated = _update_user_tier_by_selector(
+        supabase_url,
+        service_role_key,
+        tier_target,
+        clerk_id,
+        email,
+    )
+
+    return {
+        "status": "ok",
+        "event_type": event_type,
+        "updated": updated,
+    }
+
+
+@app.post("/api/webhooks/razorpay")
+async def razorpay_webhook(request: Request):
+    raw_body = await request.body()
+    razorpay_signature = request.headers.get("X-Razorpay-Signature")
+    razorpay_webhook_secret = os.getenv("RAZORPAY_WEBHOOK_SECRET")
+
+    if not razorpay_webhook_secret:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="RAZORPAY_WEBHOOK_SECRET is not configured",
+        )
+    if not razorpay_signature:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Missing X-Razorpay-Signature header",
+        )
+
+    if not _verify_razorpay_signature(raw_body, razorpay_signature, razorpay_webhook_secret):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid Razorpay webhook signature",
+        )
+
+    try:
+        payload = json.loads(raw_body.decode("utf-8") or "{}")
+    except json.JSONDecodeError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="Invalid Razorpay webhook payload",
+        ) from exc
+
+    event_type = payload.get("event")
+    upgrade_events = {
+        "payment.captured",
+        "order.paid",
+        "subscription.activated",
+        "subscription.charged",
+    }
+    downgrade_events = {
+        "subscription.cancelled",
+        "subscription.halted",
+        "subscription.completed",
+    }
+
+    if event_type in upgrade_events:
+        tier_target = "pro"
+    elif event_type in downgrade_events:
+        tier_target = "free"
+    else:
+        return {"status": "ignored", "event_type": event_type}
+
+    supabase_url, service_role_key = _get_supabase_admin_config()
+    clerk_id, email = _resolve_webhook_user_selectors(payload)
+    updated = _update_user_tier_by_selector(
+        supabase_url,
+        service_role_key,
+        tier_target,
+        clerk_id,
+        email,
+    )
+
+    return {
+        "status": "ok",
+        "event_type": event_type,
+        "updated": updated,
+    }
+
+
 @app.post("/api/register-agent")
-async def register_agent(_payload: RegisterAgentRequest):
-    return not_implemented_response()
-
-
-@app.post("/api/simulate")
-async def simulate(_payload: SimulateRequest, request: Request, background_tasks: BackgroundTasks):
+async def register_agent(_payload: RegisterAgentRequest, request: Request):
     clerk_id = getattr(request.state, "user_id", None)
     if not isinstance(clerk_id, str) or not clerk_id:
         raise HTTPException(
@@ -562,6 +829,131 @@ async def simulate(_payload: SimulateRequest, request: Request, background_tasks
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Authenticated user is not provisioned",
         )
+
+    sdk_key_filter = parse.quote(_payload.sdk_key, safe="")
+    user_id_filter = parse.quote(user_id, safe="")
+    projects_endpoint = (
+        f"{supabase_url}/rest/v1/projects"
+        f"?sdk_key=eq.{sdk_key_filter}&user_id=eq.{user_id_filter}&select=id&limit=1"
+    )
+    projects = _supabase_fetch_json(projects_endpoint, service_role_key)
+    if not isinstance(projects, list) or len(projects) == 0:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Project not found for sdk_key",
+        )
+
+    project_id = projects[0].get("id")
+    if not isinstance(project_id, str) or not project_id:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Project not found for sdk_key",
+        )
+
+    computed_fingerprint = _compute_agent_fingerprint(_payload.system_prompt, _payload.tools)
+
+    project_id_filter = parse.quote(project_id, safe="")
+    fingerprint_filter = parse.quote(computed_fingerprint, safe="")
+    existing_agent_endpoint = (
+        f"{supabase_url}/rest/v1/agents"
+        f"?project_id=eq.{project_id_filter}&fingerprint=eq.{fingerprint_filter}"
+        f"&select=id&order=registered_at.desc&limit=1"
+    )
+    existing_agents = _supabase_fetch_json(existing_agent_endpoint, service_role_key)
+    if isinstance(existing_agents, list) and len(existing_agents) > 0:
+        existing_agent_id = existing_agents[0].get("id")
+        if isinstance(existing_agent_id, str) and existing_agent_id:
+            return {"agent_id": existing_agent_id}
+
+    agent_id = str(uuid4())
+    insert_agent_endpoint = f"{supabase_url}/rest/v1/agents"
+    inserted_rows = _supabase_request_json(
+        "POST",
+        insert_agent_endpoint,
+        {
+            "id": agent_id,
+            "project_id": project_id,
+            "system_prompt": _payload.system_prompt,
+            "model": _payload.model,
+            "tools": _payload.tools,
+            "fingerprint": computed_fingerprint,
+        },
+        service_role_key,
+        prefer="return=representation",
+    )
+
+    if isinstance(inserted_rows, list) and len(inserted_rows) > 0:
+        inserted_agent_id = inserted_rows[0].get("id")
+        if isinstance(inserted_agent_id, str) and inserted_agent_id:
+            return {"agent_id": inserted_agent_id}
+
+    return {"agent_id": agent_id}
+
+
+@app.post("/api/simulate")
+async def simulate(_payload: SimulateRequest, request: Request, background_tasks: BackgroundTasks):
+    clerk_id = getattr(request.state, "user_id", None)
+    if not isinstance(clerk_id, str) or not clerk_id:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Missing authenticated user context",
+        )
+
+    supabase_url, service_role_key = _get_supabase_admin_config()
+
+    clerk_id_filter = parse.quote(clerk_id, safe="")
+    users_endpoint = (
+        f"{supabase_url}/rest/v1/users"
+        f"?clerk_id=eq.{clerk_id_filter}&select=id,tier&limit=1"
+    )
+    users = _supabase_fetch_json(users_endpoint, service_role_key)
+    if not isinstance(users, list) or len(users) == 0:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Authenticated user is not provisioned",
+        )
+
+    user_id = users[0].get("id")
+    if not isinstance(user_id, str) or not user_id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Authenticated user is not provisioned",
+        )
+
+    user_tier = _normalize_user_tier(users[0].get("tier"))
+    hourly_limit = _tier_hourly_limit(user_tier)
+    if hourly_limit is not None:
+        current_time = datetime.now(timezone.utc)
+        hour_ago_iso = datetime.fromtimestamp(
+            current_time.timestamp() - 3600,
+            timezone.utc,
+        ).strftime("%Y-%m-%dT%H:%M:%SZ")
+        launches_endpoint = (
+            f"{supabase_url}/rest/v1/simulations"
+            f"?user_id=eq.{parse.quote(user_id, safe='')}"
+            f"&created_at=gte.{parse.quote(hour_ago_iso, safe=':-TZ')}"
+            f"&select=id,created_at&order=created_at.asc"
+        )
+        launches = _supabase_fetch_json(launches_endpoint, service_role_key)
+        launch_rows = launches if isinstance(launches, list) else []
+
+        if len(launch_rows) >= hourly_limit:
+            retry_after_seconds = 3600
+            oldest = _parse_iso_datetime(launch_rows[0].get("created_at") if launch_rows else None)
+            if oldest is not None:
+                elapsed_seconds = int((current_time - oldest).total_seconds())
+                retry_after_seconds = max(1, 3600 - max(0, elapsed_seconds))
+
+            return JSONResponse(
+                status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+                content={
+                    "detail": (
+                        f"Rate limit exceeded for tier '{user_tier}'. "
+                        f"Limit is {hourly_limit} simulation launches per hour."
+                    )
+                },
+                headers={"Retry-After": str(retry_after_seconds)},
+            )
 
     sdk_key_filter = parse.quote(_payload.sdk_key, safe="")
     user_id_filter = parse.quote(user_id, safe="")
@@ -930,9 +1322,64 @@ async def simulation_replay(simulation_id: UUID, run_id: UUID, request: Request)
 
 
 @app.post("/api/simulation/{simulation_id}/cancel")
-async def simulation_cancel(simulation_id: UUID):
-    _ = simulation_id
-    return not_implemented_response()
+async def simulation_cancel(simulation_id: UUID, request: Request):
+    clerk_id = getattr(request.state, "user_id", None)
+    if not isinstance(clerk_id, str) or not clerk_id:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Missing authenticated user context",
+        )
+
+    supabase_url, service_role_key = _get_supabase_admin_config()
+    clerk_id_filter = parse.quote(clerk_id, safe="")
+    users_endpoint = (
+        f"{supabase_url}/rest/v1/users"
+        f"?clerk_id=eq.{clerk_id_filter}&select=id&limit=1"
+    )
+    users = _supabase_fetch_json(users_endpoint, service_role_key)
+    if not isinstance(users, list) or len(users) == 0:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Authenticated user is not provisioned",
+        )
+
+    user_id = users[0].get("id")
+    if not isinstance(user_id, str) or not user_id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Authenticated user is not provisioned",
+        )
+
+    simulation_id_filter = parse.quote(str(simulation_id), safe="")
+    user_id_filter = parse.quote(user_id, safe="")
+    simulation_endpoint = (
+        f"{supabase_url}/rest/v1/simulations"
+        f"?id=eq.{simulation_id_filter}&user_id=eq.{user_id_filter}"
+        f"&select=id,status&limit=1"
+    )
+    simulations = _supabase_fetch_json(simulation_endpoint, service_role_key)
+    if not isinstance(simulations, list) or len(simulations) == 0:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Simulation not found",
+        )
+
+    current_status = simulations[0].get("status")
+    if current_status in {"completed", "failed"}:
+        return {"ok": True}
+
+    cancel_endpoint = (
+        f"{supabase_url}/rest/v1/simulations"
+        f"?id=eq.{simulation_id_filter}&user_id=eq.{user_id_filter}"
+    )
+    _supabase_request(
+        "PATCH",
+        cancel_endpoint,
+        {"status": "cancelled"},
+        service_role_key,
+    )
+
+    return {"ok": True}
 
 
 @app.get("/api/me")
