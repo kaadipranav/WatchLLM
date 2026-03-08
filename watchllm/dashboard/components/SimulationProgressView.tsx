@@ -129,7 +129,7 @@ export function SimulationProgressView({ simulationId }: Props) {
       .subscribe();
 
     return () => {
-      supabase.removeChannel(channel);
+      channel.unsubscribe();
     };
   }, [simulationId]);
 

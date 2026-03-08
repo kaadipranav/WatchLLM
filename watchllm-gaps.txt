@@ -278,12 +278,12 @@ Files to edit: watchllm/dashboard/components/
         - Data sourced from R2 reports/{simulation_id}/summary.json via
           GET /api/simulation/:id/report
 
-[ ] G3 [P2] Fix deprecated supabase.removeChannel()
+[x] G3 [P2] Fix deprecated supabase.removeChannel()
         - watchllm/dashboard/components/SimulationProgressView.tsx line ~85
         - Current: supabase.removeChannel(channel)
         - Correct: channel.unsubscribe()
 
-[ ] G4 [P2] Never use service role key in frontend
+[x] G4 [P2] Never use service role key in frontend
         - watchllm/dashboard/lib/supabaseClient.ts uses NEXT_PUBLIC_SUPABASE_ANON_KEY
           which is correct — keep this
         - Confirm nowhere in dashboard components is SUPABASE_SERVICE_ROLE_KEY used
@@ -482,3 +482,11 @@ MANUAL TEST CHECKLIST (KEEP UPDATING)
         - agents SELECT is allowed only via JOIN ownership to projects.user_id = auth.uid()
         - sim_runs SELECT is allowed only via JOIN ownership to simulations.user_id = auth.uid()
         - service role bypasses RLS and remains reserved for API/Workers
+
+[x] G3 Supabase channel unsubscribe
+        - SimulationProgressView cleanup uses channel.unsubscribe() instead of deprecated supabase.removeChannel(channel)
+        - realtime subscription teardown remains scoped to component unmount / simulationId change
+
+[x] G4 Frontend service-role key safety
+        - dashboard Supabase client continues to use NEXT_PUBLIC_SUPABASE_ANON_KEY only
+        - no SUPABASE_SERVICE_ROLE_KEY references exist in watchllm/dashboard/**
