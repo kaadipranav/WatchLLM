@@ -259,7 +259,7 @@ Files to edit: watchllm/dashboard/components/
         - Add onClick handler that sets selected run_id → render FailureReplayViewer
           with that run_id alongside (or below) SimulationProgressView
 
-[ ] G5 [P3] "Suggested Fix" in FailureReplayViewer
+[x] G5 [P3] "Suggested Fix" in FailureReplayViewer
         - After each failure explanation, render a "Suggested Fix" block
         - Source: pass the category + explanation to a lightweight prompt
           (can reuse the claude-haiku judge call or a separate cheap Groq call)
@@ -518,3 +518,9 @@ MANUAL TEST CHECKLIST (KEEP UPDATING)
         - clicking a live failure card sets selected run_id in SimulationProgressView
         - FailureReplayViewer is rendered below SimulationProgressView for selected run_id
         - newest failure auto-selects when no run is selected yet
+
+[x] G5 Suggested fix rendering
+        - judged (rule_triggered=false) failures store optional suggested_fix in trace result
+        - sim_runs.explanation stores explanation plus suggested fix text to avoid extra runtime calls
+        - FailureReplayViewer renders a dedicated "Suggested Fix" block when suggested_fix is present
+        - no suggested fix is generated for rule_triggered=true runs

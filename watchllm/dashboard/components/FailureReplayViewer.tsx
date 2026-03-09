@@ -11,6 +11,7 @@ type JudgeResult = {
   severity: number;
   category: string;
   explanation: string;
+  suggested_fix?: string;
   rule_triggered: boolean;
 };
 
@@ -56,6 +57,17 @@ const explanationStyle: React.CSSProperties = {
   fontSize: "0.85rem",
   color: "#9ca3af",
   marginBottom: "1rem",
+  whiteSpace: "pre-wrap",
+};
+
+const suggestedFixStyle: React.CSSProperties = {
+  fontSize: "0.85rem",
+  color: "#d1fae5",
+  marginBottom: "1rem",
+  padding: "0.75rem",
+  borderRadius: "0.5rem",
+  border: "1px solid #064e3b",
+  backgroundColor: "#022c22",
   whiteSpace: "pre-wrap",
 };
 
@@ -163,6 +175,23 @@ export function FailureReplayViewer({ simulationId, runId }: Props) {
       </div>
 
       <div style={explanationStyle}>{trace.result.explanation}</div>
+
+      {!trace.result.rule_triggered && trace.result.suggested_fix && (
+        <div style={suggestedFixStyle}>
+          <div
+            style={{
+              fontSize: "0.75rem",
+              textTransform: "uppercase",
+              letterSpacing: "0.08em",
+              color: "#6ee7b7",
+              marginBottom: "0.35rem",
+            }}
+          >
+            Suggested Fix
+          </div>
+          <div>{trace.result.suggested_fix}</div>
+        </div>
+      )}
 
       <div style={listStyle}>
         {trace.conversation.map((turn, index) => {

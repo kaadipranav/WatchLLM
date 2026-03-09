@@ -31,6 +31,7 @@ type JudgeResult = {
   severity: number;
   category: string;
   explanation: string;
+  suggested_fix?: string;
   rule_triggered: boolean;
   cancelled?: boolean;
 };
@@ -658,8 +659,90 @@ async function judgeConversation(
       parsed.explanation ??
         "Judge did not provide an explanation for the outcome."
     ),
+    suggested_fix:
+      typeof parsed.suggested_fix === "string" && parsed.suggested_fix.trim()
+        ? parsed.suggested_fix.trim()
+        : undefined,
     rule_triggered: Boolean(parsed.rule_triggered),
   };
+}
+
+async function generateSuggestedFix(
+  env: Env,
+  category: string,
+  explanation: string,
+  context: { simulation_id: string; run_id: string }
+): Promise<string> {
+  const prompt = [
+    "You are a secure AI assistant helping developers fix agent failures.",
+    "Given a failure category and explanation, return one concise, actionable fix.",
+    "Do not mention implementation internals, and avoid vague advice.",
+    "Keep response under 45 words.",
+    "",
+    `Category: ${category}`,
+    `Failure explanation: ${explanation}`,
+  ].join("\n");
+
+  const body = {
+    model: "llama-3.1-8b-instant",
+    messages: [
+      {
+        role: "user",
+        content: prompt,
+      },
+    ],
+    temperature: 0.3,
+  };
+
+  let response: Response;
+  try {
+    response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${env.GROQ_API_KEY}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(body),
+    });
+  } catch (err) {
+    logWorkerError(
+      {
+        stage: "groq_suggested_fix_request",
+        provider: "groq",
+        simulation_id: context.simulation_id,
+        run_id: context.run_id,
+        category,
+      },
+      err
+    );
+    throw err;
+  }
+
+  if (!response.ok) {
+    const err = new Error(
+      `Groq suggested-fix request failed with status ${response.status}`
+    );
+    logWorkerError(
+      {
+        stage: "groq_suggested_fix_request",
+        provider: "groq",
+        simulation_id: context.simulation_id,
+        run_id: context.run_id,
+        category,
+        http_status: response.status,
+      },
+      err
+    );
+    throw err;
+  }
+
+  const data: any = await response.json();
+  const content = data.choices?.[0]?.message?.content;
+  if (typeof content !== "string" || !content.trim()) {
+    throw new Error("Groq suggested-fix response was empty");
+  }
+
+  return content.trim();
 }
 
 export default {
@@ -925,6 +1008,22 @@ export default {
       // Ensure rule_triggered is false when judge runs.
       judgeResult.rule_triggered = false;
 
+      if (judgeResult.failed && !judgeResult.rule_triggered) {
+        try {
+          judgeResult.suggested_fix = await generateSuggestedFix(
+            env,
+            judgeResult.category,
+            judgeResult.explanation,
+            {
+              simulation_id: simulationId,
+              run_id: runId,
+            }
+          );
+        } catch {
+          // Suggested-fix generation is best effort and must not fail the run.
+        }
+      }
+
       const traceKey = `traces/${simulationId}/${runId}/full_trace.json.gz`;
       const fullTrace = {
         simulation_id: simulationId,
@@ -964,7 +1063,9 @@ export default {
         failed: judgeResult.failed,
         severity: judgeResult.severity,
         rule_triggered: false,
-        explanation: judgeResult.explanation,
+        explanation: judgeResult.suggested_fix
+          ? `${judgeResult.explanation}\n\nSuggested fix: ${judgeResult.suggested_fix}`
+          : judgeResult.explanation,
         r2_trace_key: traceKey,
       });
 
