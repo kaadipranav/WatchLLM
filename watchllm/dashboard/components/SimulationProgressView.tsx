@@ -33,6 +33,17 @@ type FailureSummary = {
   explanation: string | null;
 };
 
+type CategoryReportRow = {
+  runs: number;
+  failures: number;
+  avg_severity: number;
+};
+
+type SummaryReport = {
+  simulation_id: string;
+  categories: Record<string, CategoryReportRow>;
+};
+
 type Props = {
   simulationId: string;
 };
@@ -77,6 +88,15 @@ const valueStyle: React.CSSProperties = {
   fontSize: "1rem",
 };
 
+const ATTACK_CATEGORIES = [
+  "prompt_injection",
+  "goal_hijacking",
+  "memory_poisoning",
+  "tool_abuse",
+  "boundary_testing",
+  "jailbreak_variants",
+];
+
 function severityColor(severity: number | null | undefined): string {
   if (severity == null) return "#9ca3af"; // neutral gray
   if (severity <= 2) return "#22c55e"; // green (safe)
@@ -88,6 +108,7 @@ export function SimulationProgressView({ simulationId }: Props) {
   const [simulation, setSimulation] = useState<SimulationRow | null>(null);
   const [failures, setFailures] = useState<FailureSummary[]>([]);
   const [selectedRunId, setSelectedRunId] = useState<string | null>(null);
+  const [categoryReport, setCategoryReport] = useState<Record<string, CategoryReportRow>>({});
 
   useEffect(() => {
     const channel = supabase
@@ -133,6 +154,45 @@ export function SimulationProgressView({ simulationId }: Props) {
 
     return () => {
       channel.unsubscribe();
+    };
+  }, [simulationId]);
+
+  useEffect(() => {
+    let active = true;
+
+    const fetchCategoryReport = async () => {
+      try {
+        const response = await fetch(`/api/simulation/${simulationId}/report`);
+        if (!response.ok) {
+          return;
+        }
+
+        const payload = (await response.json()) as SummaryReport;
+        if (!active || !payload || typeof payload !== "object") {
+          return;
+        }
+
+        const categories = payload.categories ?? {};
+        const normalized: Record<string, CategoryReportRow> = {};
+        for (const category of ATTACK_CATEGORIES) {
+          const row = categories[category];
+          normalized[category] = {
+            runs: typeof row?.runs === "number" ? row.runs : 0,
+            failures: typeof row?.failures === "number" ? row.failures : 0,
+            avg_severity: typeof row?.avg_severity === "number" ? row.avg_severity : 0,
+          };
+        }
+        setCategoryReport(normalized);
+      } catch {
+        // Report fetch is best-effort while simulation is in flight.
+      }
+    };
+
+    fetchCategoryReport();
+    const intervalId = window.setInterval(fetchCategoryReport, 4000);
+    return () => {
+      active = false;
+      window.clearInterval(intervalId);
     };
   }, [simulationId]);
 
@@ -192,6 +252,72 @@ export function SimulationProgressView({ simulationId }: Props) {
               {severityScore != null ? severityScore.toFixed(2) : "—"}
             </div>
           </div>
+        </div>
+
+        <div style={sectionTitleStyle}>Attack Category Matrix</div>
+        <div
+          style={{
+            borderRadius: "0.5rem",
+            border: "1px solid #111827",
+            overflow: "hidden",
+            marginBottom: "1.25rem",
+          }}
+        >
+          {ATTACK_CATEGORIES.map((category) => {
+            const row = categoryReport[category] ?? {
+              runs: 0,
+              failures: 0,
+              avg_severity: 0,
+            };
+
+            const failureRate = row.runs > 0 ? Math.min(100, Math.round((row.failures / row.runs) * 100)) : 0;
+            const barColor = severityColor(row.avg_severity);
+
+            return (
+              <div
+                key={category}
+                style={{
+                  borderBottom: "1px solid #111827",
+                  padding: "0.6rem 0.75rem",
+                  backgroundColor: "#020617",
+                }}
+              >
+                <div
+                  style={{
+                    display: "grid",
+                    gridTemplateColumns: "1.2fr 0.7fr 0.7fr 0.7fr",
+                    gap: "0.5rem",
+                    fontSize: "0.8rem",
+                    alignItems: "center",
+                    marginBottom: "0.4rem",
+                  }}
+                >
+                  <span>{category}</span>
+                  <span style={{ color: "#9ca3af" }}>runs: {row.runs}</span>
+                  <span style={{ color: "#9ca3af" }}>fail: {row.failures}</span>
+                  <span style={{ color: barColor }}>avg: {row.avg_severity.toFixed(2)}</span>
+                </div>
+                <div
+                  style={{
+                    width: "100%",
+                    height: "0.35rem",
+                    borderRadius: "999px",
+                    backgroundColor: "#111827",
+                    overflow: "hidden",
+                  }}
+                >
+                  <div
+                    style={{
+                      width: `${failureRate}%`,
+                      height: "100%",
+                      backgroundColor: barColor,
+                      transition: "width 150ms ease-out",
+                    }}
+                  />
+                </div>
+              </div>
+            );
+          })}
         </div>
 
         <div style={sectionTitleStyle}>Live Failures</div>

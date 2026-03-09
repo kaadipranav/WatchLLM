@@ -272,7 +272,7 @@ Files to edit: watchllm/dashboard/components/
           LLM call at judge time, not on every dashboard load
         - Never generate fixes for rule_triggered=true runs (no judge ran)
 
-[ ] G2 [P3] Attack category matrix
+[x] G2 [P3] Attack category matrix
         - Show a 6-row grid (one per category) with: run count, failure count,
           avg severity, color-coded status bar
         - Data sourced from R2 reports/{simulation_id}/summary.json via
@@ -524,3 +524,8 @@ MANUAL TEST CHECKLIST (KEEP UPDATING)
         - sim_runs.explanation stores explanation plus suggested fix text to avoid extra runtime calls
         - FailureReplayViewer renders a dedicated "Suggested Fix" block when suggested_fix is present
         - no suggested fix is generated for rule_triggered=true runs
+
+[x] G2 Attack category matrix
+        - SimulationProgressView renders 6 fixed category rows
+        - each row shows runs, failures, avg severity, and a color-coded status bar
+        - matrix data is fetched from GET /api/simulation/{id}/report summary payload
