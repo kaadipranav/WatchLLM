@@ -1,3 +1,5 @@
+"use client";
+
 import { useEffect, useState } from "react";
 
 type ConversationTurn = {
@@ -30,20 +32,20 @@ type Props = {
 };
 
 const containerStyle: React.CSSProperties = {
-  backgroundColor: "#020617",
-  color: "#f9fafb",
-  padding: "1.5rem",
+  backgroundColor: "#0a0a0a",
+  color: "#ffffff",
+  padding: "24px",
   borderRadius: "0.75rem",
-  border: "1px solid #1f2937",
+  border: "1px solid rgba(255,255,255,0.08)",
   fontFamily:
-    '"JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace',
+    'var(--font-mono, "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace)',
 };
 
 const titleStyle: React.CSSProperties = {
-  fontSize: "0.9rem",
+  fontSize: "0.75rem",
   textTransform: "uppercase",
-  letterSpacing: "0.08em",
-  color: "#9ca3af",
+  letterSpacing: "0.1em",
+  color: "rgba(255,255,255,0.45)",
   marginBottom: "0.5rem",
 };
 
@@ -55,26 +57,26 @@ const headlineStyle: React.CSSProperties = {
 
 const explanationStyle: React.CSSProperties = {
   fontSize: "0.85rem",
-  color: "#9ca3af",
+  color: "rgba(255,255,255,0.45)",
   marginBottom: "1rem",
   whiteSpace: "pre-wrap",
 };
 
 const suggestedFixStyle: React.CSSProperties = {
   fontSize: "0.85rem",
-  color: "#d1fae5",
+  color: "rgba(255,255,255,0.7)",
   marginBottom: "1rem",
   padding: "0.75rem",
   borderRadius: "0.5rem",
-  border: "1px solid #064e3b",
-  backgroundColor: "#022c22",
+  border: "1px solid rgba(255,255,255,0.12)",
+  backgroundColor: "rgba(255,255,255,0.04)",
   whiteSpace: "pre-wrap",
 };
 
 function severityColor(severity: number): string {
-  if (severity <= 2) return "#22c55e"; // green
-  if (severity === 3) return "#eab308"; // yellow
-  return "#ef4444"; // red
+  if (severity <= 2) return "rgba(255,255,255,0.45)"; // neutral — no green
+  if (severity === 3) return "#FFCC00"; // warning
+  return "#FF3B30"; // failure
 }
 
 export function FailureReplayViewer({ simulationId, runId }: Props) {
@@ -111,14 +113,14 @@ export function FailureReplayViewer({ simulationId, runId }: Props) {
     maxHeight: "16rem",
     overflowY: "auto",
     borderRadius: "0.5rem",
-    border: "1px solid #111827",
+    border: "1px solid rgba(255,255,255,0.08)",
   };
 
   if (loading && !trace) {
     return (
       <section style={containerStyle}>
         <div style={titleStyle}>Failure Replay</div>
-        <div style={{ fontSize: "0.85rem", color: "#9ca3af" }}>
+        <div style={{ fontSize: "0.85rem", color: "rgba(255,255,255,0.3)" }}>
           Loading replay from R2…
         </div>
       </section>
@@ -129,7 +131,7 @@ export function FailureReplayViewer({ simulationId, runId }: Props) {
     return (
       <section style={containerStyle}>
         <div style={titleStyle}>Failure Replay</div>
-        <div style={{ fontSize: "0.85rem", color: "#ef4444" }}>{error}</div>
+        <div style={{ fontSize: "0.85rem", color: "#FF3B30" }}>{error}</div>
       </section>
     );
   }
@@ -138,7 +140,7 @@ export function FailureReplayViewer({ simulationId, runId }: Props) {
     return (
       <section style={containerStyle}>
         <div style={titleStyle}>Failure Replay</div>
-        <div style={{ fontSize: "0.85rem", color: "#6b7280" }}>
+        <div style={{ fontSize: "0.85rem", color: "rgba(255,255,255,0.3)" }}>
           No replay data loaded.
         </div>
       </section>
@@ -182,8 +184,8 @@ export function FailureReplayViewer({ simulationId, runId }: Props) {
             style={{
               fontSize: "0.75rem",
               textTransform: "uppercase",
-              letterSpacing: "0.08em",
-              color: "#6ee7b7",
+              letterSpacing: "0.1em",
+              color: "rgba(255,255,255,0.45)",
               marginBottom: "0.35rem",
             }}
           >
@@ -202,8 +204,8 @@ export function FailureReplayViewer({ simulationId, runId }: Props) {
               key={turn.turn}
               style={{
                 padding: "0.75rem 0.85rem",
-                borderBottom: "1px solid #111827",
-                backgroundColor: isBreaking ? "#111827" : "#020617",
+                borderBottom: "1px solid rgba(255,255,255,0.08)",
+                backgroundColor: isBreaking ? "rgba(255,255,255,0.08)" : "#000000",
               }}
             >
               <div
@@ -213,7 +215,7 @@ export function FailureReplayViewer({ simulationId, runId }: Props) {
                   alignItems: "center",
                   marginBottom: "0.35rem",
                   fontSize: "0.8rem",
-                  color: "#9ca3af",
+                  color: "rgba(255,255,255,0.3)",
                 }}
               >
                 <span>Turn {turn.turn}</span>
@@ -221,7 +223,7 @@ export function FailureReplayViewer({ simulationId, runId }: Props) {
                   <span
                     style={{
                       fontSize: "0.75rem",
-                      color: "#ef4444",
+                      color: "#FF3B30",
                       textTransform: "uppercase",
                       letterSpacing: "0.08em",
                     }}
@@ -241,7 +243,7 @@ export function FailureReplayViewer({ simulationId, runId }: Props) {
                 <div>
                   <div
                     style={{
-                      color: "#9ca3af",
+                      color: "rgba(255,255,255,0.3)",
                       marginBottom: "0.25rem",
                     }}
                   >
@@ -252,7 +254,7 @@ export function FailureReplayViewer({ simulationId, runId }: Props) {
                 <div>
                   <div
                     style={{
-                      color: "#9ca3af",
+                      color: "rgba(255,255,255,0.3)",
                       marginBottom: "0.25rem",
                     }}
                   >

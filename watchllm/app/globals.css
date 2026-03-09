@@ -1,0 +1,108 @@
+@import "tailwindcss";
+
+/* === WatchLLM — "The Void" palette === */
+:root {
+  --bg-primary: #000000;
+  --bg-secondary: #050505;
+  --bg-card: #0a0a0a;
+
+  --text-primary: #ffffff;
+  --text-secondary: rgba(255, 255, 255, 0.45);
+  --text-muted: rgba(255, 255, 255, 0.3);
+
+  --accent-failure: #ff3b30;
+  --accent-warning: #ffcc00;
+  --accent-focus: #3b82f6;
+
+  --border-subtle: rgba(255, 255, 255, 0.1);
+  --border-faint: rgba(255, 255, 255, 0.08);
+
+  --font-sans: "Inter", "Geist Sans", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", "Geist Mono", ui-monospace, SFMono-Regular,
+    Menlo, Monaco, Consolas, monospace;
+}
+
+/* === Reset === */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  font-family: var(--font-sans);
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+/* === Typography hierarchy === */
+h1, h2, h3, h4 {
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+
+h5, h6 {
+  font-weight: 500;
+  letter-spacing: -0.01em;
+}
+
+/* Action labels */
+.label-action {
+  font-size: 0.75rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+}
+
+/* Monospace blocks */
+code, pre, .mono {
+  font-family: var(--font-mono);
+}
+
+/* === Scrollbar (dark) === */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: var(--bg-primary);
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 3px;
+}
+
+/* === Focus: blue ring only === */
+:focus-visible {
+  outline: 2px solid var(--accent-focus);
+  outline-offset: 2px;
+}
+
+/* === Button base (command style) === */
+button, .btn {
+  font-family: var(--font-sans);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: transparent;
+  color: white;
+  cursor: pointer;
+  transition: background 120ms, color 120ms;
+}
+button:hover, .btn:hover {
+  background: #ffffff;
+  color: #000000;
+}
+
+/* === Selection === */
+::selection {
+  background: var(--accent-focus);
+  color: white;
+}

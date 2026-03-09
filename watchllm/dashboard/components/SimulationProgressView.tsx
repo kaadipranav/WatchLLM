@@ -1,3 +1,5 @@
+"use client";
+
 import { useEffect, useState } from "react";
 import { supabase } from "../lib/supabaseClient";
 import { FailureReplayViewer } from "./FailureReplayViewer";
@@ -49,19 +51,18 @@ type Props = {
 };
 
 const backgroundStyle: React.CSSProperties = {
-  backgroundColor: "#020617", // near-black
-  color: "#f9fafb", // very light gray
-  padding: "1.5rem",
-  borderRadius: "0.75rem",
-  border: "1px solid #1f2937",
-  fontFamily: '"JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace',
+  backgroundColor: "#0a0a0a",
+  color: "#ffffff",
+  padding: "24px",
+  border: "1px solid rgba(255,255,255,0.08)",
+  fontFamily: 'var(--font-mono, "JetBrains Mono", ui-monospace, monospace)',
 };
 
 const sectionTitleStyle: React.CSSProperties = {
-  fontSize: "0.9rem",
+  fontSize: "0.75rem",
   textTransform: "uppercase",
-  letterSpacing: "0.08em",
-  color: "#9ca3af",
+  letterSpacing: "0.1em",
+  color: "rgba(255,255,255,0.45)",
   marginBottom: "0.5rem",
 };
 
@@ -80,7 +81,7 @@ const gridStyle: React.CSSProperties = {
 
 const labelStyle: React.CSSProperties = {
   fontSize: "0.8rem",
-  color: "#9ca3af",
+  color: "rgba(255,255,255,0.45)",
   marginBottom: "0.25rem",
 };
 
@@ -98,10 +99,10 @@ const ATTACK_CATEGORIES = [
 ];
 
 function severityColor(severity: number | null | undefined): string {
-  if (severity == null) return "#9ca3af"; // neutral gray
-  if (severity <= 2) return "#22c55e"; // green (safe)
-  if (severity === 3) return "#eab308"; // yellow (warning)
-  return "#ef4444"; // red (failure)
+  if (severity == null) return "rgba(255,255,255,0.3)";
+  if (severity <= 2) return "rgba(255,255,255,0.45)"; // neutral — no green for success
+  if (severity === 3) return "#FFCC00"; // warning
+  return "#FF3B30"; // failure
 }
 
 export function SimulationProgressView({ simulationId }: Props) {
@@ -212,14 +213,14 @@ export function SimulationProgressView({ simulationId }: Props) {
     width: "100%",
     height: "0.5rem",
     borderRadius: "999px",
-    backgroundColor: "#111827",
+    backgroundColor: "rgba(255,255,255,0.08)",
     overflow: "hidden",
   };
 
   const progressBarFill: React.CSSProperties = {
     width: `${progress}%`,
     height: "100%",
-    backgroundColor: "#4b5563", // neutral gray; severity colors are reserved
+    backgroundColor: "rgba(255,255,255,0.2)", // neutral; severity colors are reserved
     transition: "width 150ms ease-out",
   };
 
@@ -258,7 +259,7 @@ export function SimulationProgressView({ simulationId }: Props) {
         <div
           style={{
             borderRadius: "0.5rem",
-            border: "1px solid #111827",
+            border: "1px solid rgba(255,255,255,0.08)",
             overflow: "hidden",
             marginBottom: "1.25rem",
           }}
@@ -277,9 +278,9 @@ export function SimulationProgressView({ simulationId }: Props) {
               <div
                 key={category}
                 style={{
-                  borderBottom: "1px solid #111827",
+                  borderBottom: "1px solid rgba(255,255,255,0.08)",
                   padding: "0.6rem 0.75rem",
-                  backgroundColor: "#020617",
+                  backgroundColor: "#000000",
                 }}
               >
                 <div
@@ -293,8 +294,8 @@ export function SimulationProgressView({ simulationId }: Props) {
                   }}
                 >
                   <span>{category}</span>
-                  <span style={{ color: "#9ca3af" }}>runs: {row.runs}</span>
-                  <span style={{ color: "#9ca3af" }}>fail: {row.failures}</span>
+                  <span style={{ color: "rgba(255,255,255,0.3)" }}>runs: {row.runs}</span>
+                  <span style={{ color: "rgba(255,255,255,0.3)" }}>fail: {row.failures}</span>
                   <span style={{ color: barColor }}>avg: {row.avg_severity.toFixed(2)}</span>
                 </div>
                 <div
@@ -302,7 +303,7 @@ export function SimulationProgressView({ simulationId }: Props) {
                     width: "100%",
                     height: "0.35rem",
                     borderRadius: "999px",
-                    backgroundColor: "#111827",
+                    backgroundColor: "rgba(255,255,255,0.08)",
                     overflow: "hidden",
                   }}
                 >
@@ -326,13 +327,13 @@ export function SimulationProgressView({ simulationId }: Props) {
             maxHeight: "12rem",
             overflowY: "auto",
             borderRadius: "0.5rem",
-            border: "1px solid #111827",
+            border: "1px solid rgba(255,255,255,0.08)",
             padding: "0.75rem",
-            backgroundColor: "#020617",
+            backgroundColor: "#0a0a0a",
           }}
         >
           {failures.length === 0 ? (
-            <div style={{ fontSize: "0.85rem", color: "#6b7280" }}>
+            <div style={{ fontSize: "0.85rem", color: "rgba(255,255,255,0.3)" }}>
               Waiting for first failure signal…
             </div>
           ) : (
@@ -350,8 +351,8 @@ export function SimulationProgressView({ simulationId }: Props) {
                     marginBottom: "0.5rem",
                     borderRadius: "0.5rem",
                     border: `1px solid ${severityColor(failure.severity)}`,
-                    backgroundColor: isSelected ? "#111827" : "#020617",
-                    color: "#f9fafb",
+                    backgroundColor: isSelected ? "rgba(255,255,255,0.08)" : "#0a0a0a",
+                    color: "#ffffff",
                     cursor: "pointer",
                   }}
                 >
@@ -378,7 +379,7 @@ export function SimulationProgressView({ simulationId }: Props) {
                     <div
                       style={{
                         fontSize: "0.8rem",
-                        color: "#9ca3af",
+                        color: "rgba(255,255,255,0.3)",
                         whiteSpace: "pre-wrap",
                       }}
                     >
@@ -396,7 +397,7 @@ export function SimulationProgressView({ simulationId }: Props) {
             style={{
               marginTop: "0.75rem",
               fontSize: "0.75rem",
-              color: "#9ca3af",
+              color: "rgba(255,255,255,0.3)",
             }}
           >
             Selected run: {selectedRunId}

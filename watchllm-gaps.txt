@@ -234,7 +234,7 @@ File to edit: watchllm/cli/main.py
 GROUP F — DATABASE / SCHEMA
 ================================================================================
 
-[ ] F1 [P1] Create Supabase schema SQL migration file
+[x] F1 [P1] Create Supabase schema SQL migration file
         - File: supabase/migrations/001_initial_schema.sql
         - Exact tables from context §6: users, projects, agents, simulations, sim_runs
         - Include indexes: simulations(agent_id), sim_runs(simulation_id), projects(sdk_key)

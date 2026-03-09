@@ -1,3 +1,5 @@
+"use client";
+
 import React from "react";
 
 type Props = {
@@ -5,20 +7,20 @@ type Props = {
 };
 
 const containerStyle: React.CSSProperties = {
-  backgroundColor: "#020617",
-  color: "#f9fafb",
-  padding: "1.25rem",
+  backgroundColor: "#0a0a0a",
+  color: "#ffffff",
+  padding: "24px",
   borderRadius: "0.75rem",
-  border: "1px solid #1f2937",
+  border: "1px solid rgba(255,255,255,0.08)",
   fontFamily:
-    '"JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace',
+    'var(--font-mono, "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace)',
 };
 
 const titleStyle: React.CSSProperties = {
-  fontSize: "0.9rem",
+  fontSize: "0.75rem",
   textTransform: "uppercase",
-  letterSpacing: "0.08em",
-  color: "#9ca3af",
+  letterSpacing: "0.1em",
+  color: "rgba(255,255,255,0.45)",
   marginBottom: "0.5rem",
 };
 
@@ -29,15 +31,15 @@ const lineStyle: React.CSSProperties = {
 
 const mutedStyle: React.CSSProperties = {
   fontSize: "0.8rem",
-  color: "#9ca3af",
+  color: "rgba(255,255,255,0.3)",
 };
 
 const warningStyle: React.CSSProperties = {
   fontSize: "0.85rem",
   marginTop: "0.75rem",
   paddingTop: "0.5rem",
-  borderTop: "1px dashed #1f2937",
-  color: "#eab308", // yellow = warning
+  borderTop: "1px dashed rgba(255,255,255,0.12)",
+  color: "#FFCC00",
 };
 
 export function CostControlStrategy({ estimatedRuns }: Props) {
