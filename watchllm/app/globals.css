@@ -1,5 +1,5 @@
-@import "tailwindcss";
 @import url("https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700&family=Geist+Mono:wght@400;500&display=swap");
+@import "tailwindcss";
 
 /* ============================================================
    WatchLLM — "Liquid Iridescent Dark" design system
@@ -231,5 +231,29 @@ button:hover, .btn:hover {
 ::selection {
   background: rgba(0, 212, 255, 0.25);
   color: white;
+}
+
+/* ============================================================
+   Pulsing status dot
+   ============================================================ */
+.pulse-dot {
+  display: inline-block;
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 999px;
+  background: #FF4D6D;
+  flex-shrink: 0;
+  animation: pulse-glow 2s ease-in-out infinite;
+}
+
+@keyframes pulse-glow {
+  0%, 100% {
+    transform: scale(1);
+    box-shadow: 0 0 4px rgba(255, 77, 109, 0.6);
+  }
+  50% {
+    transform: scale(1.4);
+    box-shadow: 0 0 8px rgba(255, 77, 109, 0.9), 0 0 16px rgba(255, 77, 109, 0.4);
+  }
 }
 
