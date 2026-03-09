@@ -24,6 +24,11 @@ app = FastAPI()
 app.add_middleware(ClerkAuthMiddleware)
 
 
+@app.get("/health")
+async def healthcheck():
+    return {"status": "ok"}
+
+
 class ClerkWebhookPayload(BaseModel):
     """Loose webhook envelope; D1/D2 will tighten verification and event handling."""
 

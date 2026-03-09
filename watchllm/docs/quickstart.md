@@ -38,8 +38,7 @@ jobs:
   chaos-tests:
     runs-on: ubuntu-latest
     env:
-      GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
-      ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+      WATCHLLM_API_KEY: ${{ secrets.WATCHLLM_API_KEY }}
       NEXT_PUBLIC_APP_URL: ${{ secrets.NEXT_PUBLIC_APP_URL }}
 
     steps:
@@ -59,4 +58,6 @@ jobs:
 ```
 
 The `watchllm test` command will exit with a non-zero status code if the observed severity is greater than or equal to 4, causing the GitHub Actions job to fail and protecting your main branch from unsafe agents.
+
+Note: the CLI calls the WatchLLM API. It does not call Groq/Anthropic directly; those provider keys stay on the server-side worker environment.
 

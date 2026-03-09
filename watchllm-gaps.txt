@@ -203,28 +203,28 @@ GROUP E — CLI
 
 File to edit: watchllm/cli/main.py
 
-[ ] E1 [P2] Wire CLI to real API instead of mocks
+[x] E1 [P2] Wire CLI to real API instead of mocks
         - run_attack() currently prints hardcoded results
         - Should call POST /api/simulate, then poll GET /api/simulation/:id/status
         - Stream progress to terminal while running
         - Print final report URL on completion
 
-[ ] E2 [P2] Fail fast on missing env vars
+[x] E2 [P2] Fail fast on missing env vars
         - Before running: check WATCHLLM_API_KEY (or read from ~/.watchllm/config)
         - Print actionable error if missing, exit 2
 
-[ ] E3 [P3] `watchllm simulate` sub-command
+[x] E3 [P3] `watchllm simulate` sub-command
         - New sub-command that calls /api/simulate and streams progress
         - Different from `watchllm test`: simulate is for interactive use,
           test is for CI exit-code gating
 
-[ ] E4 [P3] `watchllm doctor` health-check command
+[x] E4 [P3] `watchllm doctor` health-check command
         - Check all required env vars are set
         - Ping Supabase URL for connectivity
         - Ping WatchLLM API /health endpoint (create a simple health route too)
         - Print pass/fail per check
 
-[ ] E5 [P2] Fix misleading docs/quickstart.md
+[x] E5 [P2] Fix misleading docs/quickstart.md
         - Currently tells CI to set GROQ_API_KEY + ANTHROPIC_API_KEY as secrets
           for the CLI job — but the CLI never uses those (the Worker does)
         - Replace with: WATCHLLM_API_KEY + NEXT_PUBLIC_APP_URL
@@ -482,6 +482,29 @@ MANUAL TEST CHECKLIST (KEEP UPDATING)
         - agents SELECT is allowed only via JOIN ownership to projects.user_id = auth.uid()
         - sim_runs SELECT is allowed only via JOIN ownership to simulations.user_id = auth.uid()
         - service role bypasses RLS and remains reserved for API/Workers
+
+[x] E2 CLI env/config fail-fast
+        - `watchllm attack|test|simulate` exits 2 with actionable message when WATCHLLM_API_KEY is missing
+        - CLI reads env first, then ~/.watchllm/config key-value file fallback
+        - NEXT_PUBLIC_APP_URL is required before API calls
+
+[x] E1 CLI real API simulation flow
+        - `watchllm attack` and `watchllm test` call POST /api/simulate (no mock output)
+        - commands poll GET /api/simulation/{id}/status every 500ms and stream progress
+        - final status and report URL are printed
+
+[x] E5 Quickstart correction
+        - docs use WATCHLLM_API_KEY + NEXT_PUBLIC_APP_URL for CI env
+        - docs clarify CLI calls WatchLLM API; LLM provider keys are server-side
+
+[x] E3 `watchllm simulate` command
+        - new sub-command calls /api/simulate and streams status interactively
+        - simulate mode is distinct from `test` (no CI fail-on threshold gating)
+
+[x] E4 `watchllm doctor` command
+        - checks required env/config values and reports pass/fail lines
+        - checks Supabase URL connectivity
+        - checks API health via GET /health (added API health route)
 
 [x] G3 Supabase channel unsubscribe
         - SimulationProgressView cleanup uses channel.unsubscribe() instead of deprecated supabase.removeChannel(channel)
