@@ -15,10 +15,38 @@ from uuid import uuid5, NAMESPACE_URL, uuid4
 from fastapi import BackgroundTasks, FastAPI, HTTPException, Request, status
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, ConfigDict, ValidationError
+import sentry_sdk
+from sentry_sdk.integrations.fastapi import FastApiIntegration
 from svix.webhooks import Webhook, WebhookVerificationError
 
 from .auth import ClerkAuthMiddleware
 from .schemas import RegisterAgentRequest, SimulateRequest, SimulationResponseRequest
+
+
+def _safe_float(value: str | None, default: float) -> float:
+    if value is None:
+        return default
+    try:
+        return float(value)
+    except ValueError:
+        return default
+
+
+def _init_sentry() -> None:
+    dsn = os.getenv("SENTRY_DSN") or os.getenv("NEXT_PUBLIC_SENTRY_DSN")
+    if not dsn:
+        return
+
+    sentry_sdk.init(
+        dsn=dsn,
+        integrations=[FastApiIntegration()],
+        traces_sample_rate=_safe_float(os.getenv("SENTRY_TRACES_SAMPLE_RATE"), 0.1),
+        profiles_sample_rate=_safe_float(os.getenv("SENTRY_PROFILES_SAMPLE_RATE"), 0.0),
+        environment=os.getenv("SENTRY_ENVIRONMENT") or os.getenv("ENVIRONMENT") or "development",
+    )
+
+
+_init_sentry()
 
 app = FastAPI()
 app.add_middleware(ClerkAuthMiddleware)

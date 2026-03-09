@@ -85,7 +85,7 @@ Files to create/edit: watchllm/api/ (new route files), wire to FastAPI app
         - Return 429 Too Many Requests with Retry-After header when exceeded
         - Purpose: protects Groq, Anthropic, and Worker compute costs
 
-[ ] A9 [P2] Auth middleware on all non-webhook routes
+[x] A9 [P2] Auth middleware on all non-webhook routes
         - Verify Clerk session token (Authorization: Bearer <token>)
         - Inject user_id into request context
         - Prevent cross-project data access (user can only see their own simulations)
@@ -302,7 +302,7 @@ GROUP H — INFRASTRUCTURE / CONFIG
         - All 20 env vars from context §12 listed with blank values
         - Never commit actual keys
 
-[ ] H3 [P3] Sentry instrumentation
+[x] H3 [P3] Sentry instrumentation
         - Add Sentry init to FastAPI app (api layer)
         - Add Sentry init to Next.js dashboard (if applicable)
         - Standard error capture + performance tracing
@@ -529,3 +529,13 @@ MANUAL TEST CHECKLIST (KEEP UPDATING)
         - SimulationProgressView renders 6 fixed category rows
         - each row shows runs, failures, avg severity, and a color-coded status bar
         - matrix data is fetched from GET /api/simulation/{id}/report summary payload
+
+[x] H3 Sentry instrumentation
+        - FastAPI initializes Sentry at startup when SENTRY_DSN (or NEXT_PUBLIC_SENTRY_DSN fallback) is set
+        - tracing and profiling sample rates are configurable via env
+        - this repo snapshot has dashboard components only (no Next.js app scaffold), so Next.js-specific init is not applicable here
+
+[x] A9 Auth middleware coverage
+        - all /api/* non-webhook routes require Authorization: Bearer token
+        - middleware verifies Clerk session token and injects request.state.user_id
+        - webhook routes remain exempt from auth enforcement
