@@ -1,28 +1,50 @@
 @import "tailwindcss";
+@import url("https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700&family=Geist+Mono:wght@400;500&display=swap");
 
-/* === WatchLLM — "The Void" palette === */
+/* ============================================================
+   WatchLLM — "Liquid Iridescent Dark" design system
+   Linear × cybersecurity terminal aesthetic
+   ============================================================ */
+
 :root {
-  --bg-primary: #000000;
-  --bg-secondary: #050505;
-  --bg-card: #0a0a0a;
+  /* --- Backgrounds --- */
+  --bg-primary:   #080808;
+  --bg-secondary: #0c0c0c;
+  --bg-card:      rgba(255, 255, 255, 0.03);
 
-  --text-primary: #ffffff;
-  --text-secondary: rgba(255, 255, 255, 0.45);
-  --text-muted: rgba(255, 255, 255, 0.3);
+  /* --- Text --- */
+  --text-primary:   #ffffff;
+  --text-secondary: rgba(255, 255, 255, 0.5);
+  --text-muted:     rgba(255, 255, 255, 0.3);
 
-  --accent-failure: #ff3b30;
-  --accent-warning: #ffcc00;
-  --accent-focus: #3b82f6;
+  /* --- Chromatic accent trio (used as glows / borders / highlights — never fills) --- */
+  --accent-cyan:   #00D4FF;
+  --accent-violet: #7B61FF;
+  --accent-coral:  #FF4D6D;
 
-  --border-subtle: rgba(255, 255, 255, 0.1);
-  --border-faint: rgba(255, 255, 255, 0.08);
+  /* --- Semantic aliases (kept for backwards compatibility with existing components) --- */
+  --accent-failure: #FF4D6D;   /* coral */
+  --accent-warning: #FFCC00;
+  --accent-focus:   #00D4FF;   /* cyan doubles as focus */
 
-  --font-sans: "Inter", "Geist Sans", ui-sans-serif, system-ui, sans-serif;
-  --font-mono: "JetBrains Mono", "Geist Mono", ui-monospace, SFMono-Regular,
-    Menlo, Monaco, Consolas, monospace;
+  /* --- Borders --- */
+  --border-subtle: rgba(255, 255, 255, 0.08);
+  --border-faint:  rgba(255, 255, 255, 0.05);
+
+  /* --- Typography --- */
+  --font-sans: "Geist", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "Geist Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+
+  /* --- Iridescent glow values (used in utilities below) --- */
+  --iridescent-glow:
+    0 0 0 1px rgba(0, 212, 255, 0.15),
+    0 0 12px rgba(0, 212, 255, 0.08),
+    0 0 24px rgba(123, 97, 255, 0.06);
 }
 
-/* === Reset === */
+/* ============================================================
+   Reset
+   ============================================================ */
 *,
 *::before,
 *::after {
@@ -36,7 +58,23 @@ html {
   -moz-osx-font-smoothing: grayscale;
 }
 
+/* ============================================================
+   Noise texture overlay — adds subtle grain depth to bg
+   ============================================================ */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  opacity: 0.03;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='200' height='200' filter='url(%23noise)' opacity='1'/%3E%3C/svg%3E");
+  background-repeat: repeat;
+  background-size: 200px 200px;
+}
+
 body {
+  position: relative;
   font-family: var(--font-sans);
   background: var(--bg-primary);
   color: var(--text-primary);
@@ -44,18 +82,21 @@ body {
   line-height: 1.5;
 }
 
-/* === Typography hierarchy === */
+/* ============================================================
+   Typography
+   ============================================================ */
 h1, h2, h3, h4 {
+  font-family: var(--font-sans);
   font-weight: 600;
-  letter-spacing: -0.02em;
-}
-
-h5, h6 {
-  font-weight: 500;
   letter-spacing: -0.01em;
 }
 
-/* Action labels */
+h5, h6 {
+  font-family: var(--font-sans);
+  font-weight: 500;
+  letter-spacing: -0.005em;
+}
+
 .label-action {
   font-size: 0.75rem;
   letter-spacing: 0.1em;
@@ -63,46 +104,132 @@ h5, h6 {
   color: var(--text-secondary);
 }
 
-/* Monospace blocks */
 code, pre, .mono {
   font-family: var(--font-mono);
 }
 
-/* === Scrollbar (dark) === */
-::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+/* ============================================================
+   Iridescent border utility
+   — 1px conic-gradient border cycling through accent trio at
+     40% opacity, with layered glow
+   ============================================================ */
+.iridescent-border {
+  position: relative;
+  border: none;
 }
-::-webkit-scrollbar-track {
-  background: var(--bg-primary);
+
+.iridescent-border::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1px;
+  background: conic-gradient(
+    from var(--_ib-angle, 0deg),
+    rgba(0, 212, 255, 0.4),
+    rgba(123, 97, 255, 0.4),
+    rgba(255, 77, 109, 0.4),
+    rgba(0, 212, 255, 0.4)
+  );
+  -webkit-mask:
+    linear-gradient(#fff 0 0) content-box,
+    linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
 }
-::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.15);
+
+/* Slow rotation of the gradient angle for a living-border effect */
+@property --_ib-angle {
+  syntax: "<angle>";
+  inherits: false;
+  initial-value: 0deg;
+}
+
+@keyframes iridescent-spin {
+  to { --_ib-angle: 360deg; }
+}
+
+.iridescent-border {
+  animation: iridescent-spin 8s linear infinite;
+  box-shadow: var(--iridescent-glow);
+}
+
+/* ============================================================
+   Glow text utility
+   — soft cyan text-shadow at 60% opacity
+   ============================================================ */
+.glow-text {
+  text-shadow:
+    0 0 8px rgba(0, 212, 255, 0.6),
+    0 0 20px rgba(0, 212, 255, 0.25);
+}
+
+/* ============================================================
+   Surface card base
+   — backdrop blur glass effect with iridescent border
+   ============================================================ */
+.card {
+  background: var(--bg-card);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-radius: 0.75rem;
+}
+
+.card.iridescent-border {
+  /* iridescent-border already provides the 1px chromatic border */
+}
+
+/* Fallback plain border for cards that don't use .iridescent-border */
+.card:not(.iridescent-border) {
+  border: 1px solid var(--border-subtle);
+}
+
+/* ============================================================
+   Scrollbar
+   ============================================================ */
+::-webkit-scrollbar        { width: 6px; height: 6px; }
+::-webkit-scrollbar-track  { background: var(--bg-primary); }
+::-webkit-scrollbar-thumb  {
+  background: rgba(255, 255, 255, 0.12);
   border-radius: 3px;
 }
-
-/* === Focus: blue ring only === */
-:focus-visible {
-  outline: 2px solid var(--accent-focus);
-  outline-offset: 2px;
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 212, 255, 0.3);
 }
 
-/* === Button base (command style) === */
+/* ============================================================
+   Focus ring — cyan
+   ============================================================ */
+:focus-visible {
+  outline: 1.5px solid var(--accent-cyan);
+  outline-offset: 2px;
+  box-shadow: 0 0 0 3px rgba(0, 212, 255, 0.15);
+}
+
+/* ============================================================
+   Button base (command style)
+   ============================================================ */
 button, .btn {
   font-family: var(--font-sans);
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.15);
   background: transparent;
   color: white;
   cursor: pointer;
-  transition: background 120ms, color 120ms;
+  transition: background 120ms, color 120ms, border-color 120ms, box-shadow 120ms;
 }
 button:hover, .btn:hover {
   background: #ffffff;
   color: #000000;
+  border-color: transparent;
+  box-shadow: none;
 }
 
-/* === Selection === */
+/* ============================================================
+   Selection
+   ============================================================ */
 ::selection {
-  background: var(--accent-focus);
+  background: rgba(0, 212, 255, 0.25);
   color: white;
 }
+
