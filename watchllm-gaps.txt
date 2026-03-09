@@ -254,7 +254,7 @@ GROUP G — DASHBOARD
 
 Files to edit: watchllm/dashboard/components/
 
-[ ] G1 [P3] Link live failure cards to FailureReplayViewer
+[x] G1 [P3] Link live failure cards to FailureReplayViewer
         - SimulationProgressView.tsx renders failure cards but they're not clickable
         - Add onClick handler that sets selected run_id → render FailureReplayViewer
           with that run_id alongside (or below) SimulationProgressView
@@ -513,3 +513,8 @@ MANUAL TEST CHECKLIST (KEEP UPDATING)
 [x] G4 Frontend service-role key safety
         - dashboard Supabase client continues to use NEXT_PUBLIC_SUPABASE_ANON_KEY only
         - no SUPABASE_SERVICE_ROLE_KEY references exist in watchllm/dashboard/**
+
+[x] G1 Failure card replay linkage
+        - clicking a live failure card sets selected run_id in SimulationProgressView
+        - FailureReplayViewer is rendered below SimulationProgressView for selected run_id
+        - newest failure auto-selects when no run is selected yet

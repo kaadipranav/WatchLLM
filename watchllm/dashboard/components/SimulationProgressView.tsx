@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { supabase } from "../lib/supabaseClient";
+import { FailureReplayViewer } from "./FailureReplayViewer";
 
 type SimulationStatus = "queued" | "running" | "completed" | "failed";
 
@@ -86,6 +87,7 @@ function severityColor(severity: number | null | undefined): string {
 export function SimulationProgressView({ simulationId }: Props) {
   const [simulation, setSimulation] = useState<SimulationRow | null>(null);
   const [failures, setFailures] = useState<FailureSummary[]>([]);
+  const [selectedRunId, setSelectedRunId] = useState<string | null>(null);
 
   useEffect(() => {
     const channel = supabase
@@ -123,6 +125,7 @@ export function SimulationProgressView({ simulationId }: Props) {
               },
               ...current,
             ]);
+            setSelectedRunId((current) => current ?? record.id);
           }
         }
       )
@@ -160,93 +163,125 @@ export function SimulationProgressView({ simulationId }: Props) {
     transition: "width 150ms ease-out",
   };
 
+  const wrapperStyle: React.CSSProperties = {
+    display: "grid",
+    gap: "1rem",
+  };
+
   return (
-    <section style={backgroundStyle}>
-      <div style={sectionTitleStyle}>Simulation Control</div>
-      <div style={headlineStyle}>Simulation {simulationId}</div>
+    <div style={wrapperStyle}>
+      <section style={backgroundStyle}>
+        <div style={sectionTitleStyle}>Simulation Control</div>
+        <div style={headlineStyle}>Simulation {simulationId}</div>
 
-      <div style={gridStyle}>
-        <div>
-          <div style={labelStyle}>Status</div>
-          <div style={valueStyle}>{simulation?.status ?? "queued"}</div>
-        </div>
-        <div>
-          <div style={labelStyle}>Progress</div>
-          <div style={valueStyle}>{progress}%</div>
-          <div style={progressBarTrack}>
-            <div style={progressBarFill} />
+        <div style={gridStyle}>
+          <div>
+            <div style={labelStyle}>Status</div>
+            <div style={valueStyle}>{simulation?.status ?? "queued"}</div>
           </div>
-        </div>
-        <div>
-          <div style={labelStyle}>Agent Safety Score</div>
-          <div style={severityStyle}>
-            {severityScore != null ? severityScore.toFixed(2) : "—"}
-          </div>
-        </div>
-      </div>
-
-      <div style={sectionTitleStyle}>Live Failures</div>
-      <div
-        style={{
-          maxHeight: "12rem",
-          overflowY: "auto",
-          borderRadius: "0.5rem",
-          border: "1px solid #111827",
-          padding: "0.75rem",
-          backgroundColor: "#020617",
-        }}
-      >
-        {failures.length === 0 ? (
-          <div style={{ fontSize: "0.85rem", color: "#6b7280" }}>
-            Waiting for first failure signal…
-          </div>
-        ) : (
-          failures.map((failure) => (
-            <div
-              key={failure.id}
-              style={{
-                padding: "0.5rem 0.75rem",
-                marginBottom: "0.5rem",
-                borderRadius: "0.5rem",
-                border: `1px solid ${severityColor(failure.severity)}`,
-                backgroundColor: "#020617",
-              }}
-            >
-              <div
-                style={{
-                  display: "flex",
-                  justifyContent: "space-between",
-                  alignItems: "center",
-                  marginBottom: "0.25rem",
-                  fontSize: "0.85rem",
-                }}
-              >
-                <span>{failure.category}</span>
-                <span
-                  style={{
-                    color: severityColor(failure.severity),
-                    fontSize: "0.8rem",
-                  }}
-                >
-                  Severity {failure.severity}
-                </span>
-              </div>
-              {failure.explanation && (
-                <div
-                  style={{
-                    fontSize: "0.8rem",
-                    color: "#9ca3af",
-                    whiteSpace: "pre-wrap",
-                  }}
-                >
-                  {failure.explanation}
-                </div>
-              )}
+          <div>
+            <div style={labelStyle}>Progress</div>
+            <div style={valueStyle}>{progress}%</div>
+            <div style={progressBarTrack}>
+              <div style={progressBarFill} />
             </div>
-          ))
+          </div>
+          <div>
+            <div style={labelStyle}>Agent Safety Score</div>
+            <div style={severityStyle}>
+              {severityScore != null ? severityScore.toFixed(2) : "—"}
+            </div>
+          </div>
+        </div>
+
+        <div style={sectionTitleStyle}>Live Failures</div>
+        <div
+          style={{
+            maxHeight: "12rem",
+            overflowY: "auto",
+            borderRadius: "0.5rem",
+            border: "1px solid #111827",
+            padding: "0.75rem",
+            backgroundColor: "#020617",
+          }}
+        >
+          {failures.length === 0 ? (
+            <div style={{ fontSize: "0.85rem", color: "#6b7280" }}>
+              Waiting for first failure signal…
+            </div>
+          ) : (
+            failures.map((failure) => {
+              const isSelected = selectedRunId === failure.id;
+              return (
+                <button
+                  key={failure.id}
+                  type="button"
+                  onClick={() => setSelectedRunId(failure.id)}
+                  style={{
+                    width: "100%",
+                    textAlign: "left",
+                    padding: "0.5rem 0.75rem",
+                    marginBottom: "0.5rem",
+                    borderRadius: "0.5rem",
+                    border: `1px solid ${severityColor(failure.severity)}`,
+                    backgroundColor: isSelected ? "#111827" : "#020617",
+                    color: "#f9fafb",
+                    cursor: "pointer",
+                  }}
+                >
+                  <div
+                    style={{
+                      display: "flex",
+                      justifyContent: "space-between",
+                      alignItems: "center",
+                      marginBottom: "0.25rem",
+                      fontSize: "0.85rem",
+                    }}
+                  >
+                    <span>{failure.category}</span>
+                    <span
+                      style={{
+                        color: severityColor(failure.severity),
+                        fontSize: "0.8rem",
+                      }}
+                    >
+                      Severity {failure.severity}
+                    </span>
+                  </div>
+                  {failure.explanation && (
+                    <div
+                      style={{
+                        fontSize: "0.8rem",
+                        color: "#9ca3af",
+                        whiteSpace: "pre-wrap",
+                      }}
+                    >
+                      {failure.explanation}
+                    </div>
+                  )}
+                </button>
+              );
+            })
+          )}
+        </div>
+
+        {selectedRunId && (
+          <div
+            style={{
+              marginTop: "0.75rem",
+              fontSize: "0.75rem",
+              color: "#9ca3af",
+            }}
+          >
+            Selected run: {selectedRunId}
+          </div>
         )}
-      </div>
-    </section>
+      </section>
+
+      {selectedRunId && (
+        <FailureReplayViewer simulationId={simulationId} runId={selectedRunId} />
+      )}
+    </div>
   );
 }
 
