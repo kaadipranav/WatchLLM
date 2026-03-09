@@ -106,6 +106,7 @@ h5, h6 {
 
 code, pre, .mono {
   font-family: var(--font-mono);
+  font-variant-ligatures: none;
 }
 
 /* ============================================================
@@ -188,23 +189,35 @@ code, pre, .mono {
 /* ============================================================
    Scrollbar
    ============================================================ */
-::-webkit-scrollbar        { width: 6px; height: 6px; }
-::-webkit-scrollbar-track  { background: var(--bg-primary); }
+::-webkit-scrollbar        { width: 4px; height: 4px; }
+::-webkit-scrollbar-track  { background: transparent; }
 ::-webkit-scrollbar-thumb  {
-  background: rgba(255, 255, 255, 0.12);
-  border-radius: 3px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 2px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(0, 212, 255, 0.3);
+  background: rgba(255, 255, 255, 0.2);
 }
 
 /* ============================================================
-   Focus ring — cyan
+   Focus ring — cyan (never outline: none without replacement)
    ============================================================ */
 :focus-visible {
-  outline: 1.5px solid var(--accent-cyan);
+  outline: 2px solid rgba(0, 212, 255, 0.5);
   outline-offset: 2px;
-  box-shadow: 0 0 0 3px rgba(0, 212, 255, 0.15);
+}
+
+/* ============================================================
+   Interactive element base — cursor + transitions
+   ============================================================ */
+a[href] {
+  cursor: pointer;
+  transition: color 150ms ease, background 150ms ease, border-color 150ms ease, opacity 150ms ease;
+}
+
+[role="button"],
+[tabindex]:not([tabindex="-1"]) {
+  cursor: pointer;
 }
 
 /* ============================================================
@@ -216,7 +229,7 @@ button, .btn {
   background: transparent;
   color: white;
   cursor: pointer;
-  transition: background 120ms, color 120ms, border-color 120ms, box-shadow 120ms;
+  transition: background 150ms ease, color 150ms ease, border-color 150ms ease, box-shadow 150ms ease;
 }
 button:hover, .btn:hover {
   background: #ffffff;
@@ -248,12 +261,43 @@ button:hover, .btn:hover {
 
 @keyframes pulse-glow {
   0%, 100% {
+    opacity: 1;
     transform: scale(1);
     box-shadow: 0 0 4px rgba(255, 77, 109, 0.6);
   }
   50% {
-    transform: scale(1.4);
-    box-shadow: 0 0 8px rgba(255, 77, 109, 0.9), 0 0 16px rgba(255, 77, 109, 0.4);
+    opacity: 0.5;
+    transform: scale(1.5);
+    box-shadow: 0 0 10px rgba(255, 77, 109, 0.9), 0 0 20px rgba(255, 77, 109, 0.4);
   }
+}
+
+/* Generic status dot — color driven by --dot-color custom property */
+.status-dot {
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  border-radius: 999px;
+  background: var(--dot-color, rgba(255,255,255,0.3));
+  flex-shrink: 0;
+  animation: pulse-glow 2s ease-in-out infinite;
+}
+
+/* ============================================================
+   Page fade-in — triggered on mount for each route segment
+   ============================================================ */
+@keyframes page-fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.page-fade {
+  animation: page-fade-in 150ms ease forwards;
 }
 

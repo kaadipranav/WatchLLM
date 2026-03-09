@@ -9,6 +9,7 @@ export default function Home() {
 
   return (
     <main
+      className="page-fade"
       style={{
         minHeight: "100vh",
         background: "#000000",

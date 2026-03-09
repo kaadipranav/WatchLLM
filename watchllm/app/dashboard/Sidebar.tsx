@@ -35,14 +35,11 @@ export function Sidebar() {
         style={{
           display: "flex",
           alignItems: "center",
-          // Active left border consumes 2px; shift padding to keep text aligned
+          position: "relative",
           paddingTop: "8px",
           paddingBottom: "8px",
           paddingRight: "16px",
-          paddingLeft: isActive ? "14px" : "16px",
-          borderLeft: isActive
-            ? "2px solid #7B61FF"
-            : "2px solid transparent",
+          paddingLeft: "16px",
           fontSize: "13px",
           fontFamily: "var(--font-sans)",
           fontWeight: 400,
@@ -54,9 +51,24 @@ export function Sidebar() {
             : "transparent",
           textDecoration: "none",
           letterSpacing: "0",
-          transition: "color 150ms ease, background 150ms ease, border-color 150ms ease",
+          cursor: "pointer",
+          transition: "color 150ms ease, background 150ms ease",
         }}
       >
+        {/* Animated active indicator — scaleY 0→1 from bottom */}
+        <span
+          style={{
+            position: "absolute",
+            left: 0,
+            top: 0,
+            bottom: 0,
+            width: "2px",
+            background: "#7B61FF",
+            transformOrigin: "bottom",
+            transform: isActive ? "scaleY(1)" : "scaleY(0)",
+            transition: "transform 150ms ease",
+          }}
+        />
         {item.label}
       </Link>
     );
