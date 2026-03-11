@@ -129,10 +129,8 @@ function CopyPill() {
 function EmptyState() {
   return (
     <div
-      className="iridescent-border"
+      className="bento-card"
       style={{
-        background: "rgba(255,255,255,0.025)",
-        borderRadius: "4px",
         padding: "60px 2rem",
         display: "flex",
         flexDirection: "column",
