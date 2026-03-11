@@ -7,11 +7,8 @@ type Props = {
 };
 
 const containerStyle: React.CSSProperties = {
-  backgroundColor: "#0a0a0a",
   color: "#ffffff",
   padding: "24px",
-  borderRadius: "0.75rem",
-  border: "1px solid rgba(255,255,255,0.08)",
   fontFamily:
     'var(--font-mono, "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace)',
 };
@@ -49,7 +46,7 @@ export function CostControlStrategy({ estimatedRuns }: Props) {
   const estimatedCost = safeRuns * 0.02;
 
   return (
-    <section style={containerStyle}>
+    <section className="bento-card" style={containerStyle}>
       <div style={titleStyle}>Cost Control Strategy</div>
       <div style={lineStyle}>
         Estimated runs: {safeRuns.toLocaleString("en-US")} | Estimated cost: ~$

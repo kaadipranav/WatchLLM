@@ -32,11 +32,8 @@ type Props = {
 };
 
 const containerStyle: React.CSSProperties = {
-  backgroundColor: "#0a0a0a",
   color: "#ffffff",
   padding: "24px",
-  borderRadius: "0.75rem",
-  border: "1px solid rgba(255,255,255,0.08)",
   fontFamily:
     'var(--font-mono, "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace)',
 };
@@ -118,7 +115,7 @@ export function FailureReplayViewer({ simulationId, runId }: Props) {
 
   if (loading && !trace) {
     return (
-      <section style={containerStyle}>
+      <section className="bento-card" style={containerStyle}>
         <div style={titleStyle}>Failure Replay</div>
         <div style={{ fontSize: "0.85rem", color: "rgba(255,255,255,0.3)" }}>
           Loading replay from R2…
@@ -129,7 +126,7 @@ export function FailureReplayViewer({ simulationId, runId }: Props) {
 
   if (error) {
     return (
-      <section style={containerStyle}>
+      <section className="bento-card" style={containerStyle}>
         <div style={titleStyle}>Failure Replay</div>
         <div style={{ fontSize: "0.85rem", color: "#FF3B30" }}>{error}</div>
       </section>
@@ -138,7 +135,7 @@ export function FailureReplayViewer({ simulationId, runId }: Props) {
 
   if (!trace) {
     return (
-      <section style={containerStyle}>
+      <section className="bento-card" style={containerStyle}>
         <div style={titleStyle}>Failure Replay</div>
         <div style={{ fontSize: "0.85rem", color: "rgba(255,255,255,0.3)" }}>
           No replay data loaded.
@@ -151,7 +148,7 @@ export function FailureReplayViewer({ simulationId, runId }: Props) {
     trace.conversation.length > 0 ? trace.conversation.length - 1 : -1;
 
   return (
-    <section style={containerStyle}>
+    <section className="bento-card" style={containerStyle}>
       <div style={titleStyle}>Failure Replay</div>
       <div style={headlineStyle}>
         Simulation {simulationId} · Run {runId}
