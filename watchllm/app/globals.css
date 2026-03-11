@@ -301,3 +301,168 @@ button:hover, .btn:hover {
   animation: page-fade-in 150ms ease forwards;
 }
 
+/* ============================================================
+   Insane Liquid Hero Background
+   ============================================================ */
+.insane-liquid-bg {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  z-index: 0;
+  pointer-events: none;
+  background: var(--bg-primary);
+}
+
+.liquid-blob {
+  position: absolute;
+  filter: blur(80px);
+  border-radius: 50%;
+  opacity: 0.35;
+  animation: liquid-float 20s infinite alternate ease-in-out;
+  mix-blend-mode: screen;
+}
+.liquid-blob-1 {
+  background: rgba(0, 212, 255, 0.4);
+  width: 60vw;
+  height: 60vw;
+  top: -20%;
+  left: 10%;
+  animation-delay: 0s;
+}
+.liquid-blob-2 {
+  background: rgba(123, 97, 255, 0.3);
+  width: 50vw;
+  height: 50vw;
+  bottom: -10%;
+  right: 5%;
+  animation-delay: -5s;
+}
+.liquid-blob-3 {
+  background: rgba(255, 77, 109, 0.15);
+  width: 55vw;
+  height: 55vw;
+  top: 40%;
+  left: -15%;
+  animation-delay: -10s;
+}
+
+@keyframes liquid-float {
+  0% { transform: translate(0, 0) scale(1); }
+  33% { transform: translate(30px, -50px) scale(1.1); }
+  66% { transform: translate(-20px, 20px) scale(0.9); }
+  100% { transform: translate(0, 0) scale(1); }
+}
+
+/* ============================================================
+   Insane Clickable Buttons
+   ============================================================ */
+.btn-insane-primary {
+  position: relative;
+  overflow: hidden;
+  background: #ffffff;
+  color: #000;
+  border: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.6rem 1.5rem;
+  font-family: var(--font-sans);
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  text-decoration: none;
+  box-shadow: 0 0 10px rgba(0, 212, 255, 0), 0 0 30px rgba(0, 212, 255, 0);
+  transition: transform 150ms ease, box-shadow 300ms ease, background 300ms ease, color 300ms ease;
+  z-index: 1;
+  cursor: pointer;
+}
+
+.btn-insane-primary::before {
+  content: "";
+  position: absolute;
+  top: 0; left: -100%;
+  width: 50%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.8), transparent);
+  transform: skewX(-20deg);
+  transition: none;
+  pointer-events: none;
+}
+
+.btn-insane-primary:hover {
+  background: #00D4FF;
+  color: #000;
+  box-shadow: 0 0 20px rgba(0, 212, 255, 0.6), 0 0 60px rgba(0, 212, 255, 0.3);
+  transform: translateY(-2px) scale(1.02);
+}
+
+.btn-insane-primary:hover::before {
+  animation: insane-shine 0.75s ease forwards;
+}
+
+.btn-insane-primary:active {
+  transform: translateY(1px) scale(0.95);
+  box-shadow: 0 0 10px rgba(0, 212, 255, 0.4);
+}
+
+@keyframes insane-shine {
+  100% { left: 200%; }
+}
+
+.btn-insane-secondary {
+  background: transparent;
+  color: #aaaaaa;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.6rem 1.5rem;
+  font-family: var(--font-sans);
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  text-decoration: none;
+  box-shadow: inset 0 0 0 rgba(0, 212, 255, 0);
+  transition: all 300ms ease;
+  cursor: pointer;
+}
+
+.btn-insane-secondary:hover {
+  color: #ffffff;
+  border-color: rgba(0, 212, 255, 0.6);
+  background: rgba(0, 212, 255, 0.05);
+  box-shadow: 0 0 20px rgba(0, 212, 255, 0.2), inset 0 0 15px rgba(0, 212, 255, 0.1);
+  transform: translateY(-1px) scale(1.01);
+}
+
+.btn-insane-secondary:active {
+  transform: translateY(1px) scale(0.96);
+}
+
+/* Base glowing pulse for hero words or elements */
+.pulse-breath {
+  animation: hero-breath 4s ease-in-out infinite;
+}
+@keyframes hero-breath {
+  0%, 100% { filter: drop-shadow(0 0 10px rgba(255,255,255,0.1)); }
+  50% { filter: drop-shadow(0 0 20px rgba(255,255,255,0.4)) drop-shadow(0 0 40px rgba(0, 212, 255, 0.2)); }
+}
+
+/* Magic Bento Setup */
+.bento-card {
+  position: relative;
+  background: rgba(255, 255, 255, 0.025);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 12px;
+  transition: transform 300ms cubic-bezier(0.18, 0.89, 0.32, 1.28), box-shadow 300ms ease, border-color 300ms ease;
+}
+
+.bento-card:hover {
+  transform: translateY(-4px) scale(1.01);
+  border-color: rgba(255, 255, 255, 0.12);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.4), 0 0 24px rgba(123, 97, 255, 0.1);
+  background: rgba(255, 255, 255, 0.035);
+}
+

@@ -4,15 +4,12 @@ import Link from "next/link";
 import { useState } from "react";
 
 export default function Home() {
-  const [startHover, setStartHover] = useState(false);
-  const [signInHover, setSignInHover] = useState(false);
-
   return (
     <main
       className="page-fade"
       style={{
         minHeight: "100vh",
-        background: "#000000",
+        background: "transparent",
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
@@ -21,6 +18,12 @@ export default function Home() {
         zIndex: 1,
       }}
     >
+      <div className="insane-liquid-bg">
+        <div className="liquid-blob liquid-blob-1" />
+        <div className="liquid-blob liquid-blob-2" />
+        <div className="liquid-blob liquid-blob-3" />
+      </div>
+
       <div
         style={{
           display: "grid",
@@ -28,12 +31,14 @@ export default function Home() {
           gap: "3rem",
           maxWidth: "1120px",
           width: "100%",
+          zIndex: 2,
         }}
       >
-        {/* Left â€” copy */}
+        {/* Left copy */}
         <section>
           {/* Wordmark */}
           <h1
+            className="pulse-breath"
             style={{
               fontFamily: "var(--font-sans)",
               fontSize: "52px",
@@ -61,7 +66,7 @@ export default function Home() {
             style={{
               fontFamily: "var(--font-mono)",
               fontSize: "13px",
-              color: "#666",
+              color: "#aaaaaa",
               textTransform: "uppercase",
               letterSpacing: "0.12em",
               marginBottom: "1.5rem",
@@ -89,62 +94,18 @@ export default function Home() {
 
           {/* Buttons */}
           <div style={{ display: "flex", gap: "0.75rem" }}>
-            <Link
-              href="/sign-up"
-              onMouseEnter={() => setStartHover(true)}
-              onMouseLeave={() => setStartHover(false)}
-              style={{
-                display: "inline-flex",
-                alignItems: "center",
-                justifyContent: "center",
-                padding: "0.6rem 1.5rem",
-                background: startHover ? "#00D4FF" : "#ffffff",
-                color: "#000000",
-                fontFamily: "var(--font-sans)",
-                fontSize: "13px",
-                fontWeight: 500,
-                letterSpacing: "0.08em",
-                textTransform: "uppercase",
-                textDecoration: "none",
-                borderRadius: 0,
-                border: "none",
-                transition: "background 200ms ease",
-              }}
-            >
+            <Link href="/sign-up" className="btn-insane-primary">
               Get Started
             </Link>
-            <Link
-              href="/sign-in"
-              onMouseEnter={() => setSignInHover(true)}
-              onMouseLeave={() => setSignInHover(false)}
-              style={{
-                display: "inline-flex",
-                alignItems: "center",
-                justifyContent: "center",
-                padding: "0.6rem 1.5rem",
-                background: "transparent",
-                color: signInHover ? "#ffffff" : "#aaaaaa",
-                fontFamily: "var(--font-sans)",
-                fontSize: "13px",
-                fontWeight: 500,
-                letterSpacing: "0.08em",
-                textTransform: "uppercase",
-                textDecoration: "none",
-                borderRadius: 0,
-                border: signInHover
-                  ? "1px solid rgba(0,212,255,0.5)"
-                  : "1px solid rgba(255,255,255,0.15)",
-                transition: "color 200ms ease, border-color 200ms ease",
-              }}
-            >
+            <Link href="/sign-in" className="btn-insane-secondary">
               Sign In
             </Link>
           </div>
         </section>
 
-        {/* Right â€” failure preview card */}
+        {/* Right failure preview card */}
         <section
-          className="card iridescent-border"
+          className="card bento-card iridescent-border"
           style={{
             padding: "1.25rem",
             fontFamily: "var(--font-mono)",

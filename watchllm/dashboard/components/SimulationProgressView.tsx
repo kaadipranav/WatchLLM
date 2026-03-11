@@ -51,10 +51,8 @@ type Props = {
 };
 
 const backgroundStyle: React.CSSProperties = {
-  backgroundColor: "#0a0a0a",
   color: "#ffffff",
   padding: "24px",
-  border: "1px solid rgba(255,255,255,0.08)",
   fontFamily: 'var(--font-mono, "JetBrains Mono", ui-monospace, monospace)',
 };
 
