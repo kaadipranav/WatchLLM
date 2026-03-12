@@ -16,7 +16,7 @@ export default function DashboardLayout({
           maxHeight: "100vh",
         }}
       >
-        <div className="page-fade" key={typeof window !== "undefined" ? window.location.pathname : undefined}>
+        <div className="page-fade">
           {children}
         </div>
       </main>

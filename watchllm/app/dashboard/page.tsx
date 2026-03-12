@@ -226,7 +226,7 @@ function SimulationRow({
             color: "#444",
           }}
         >
-          {new Date(sim.created_at).toLocaleString()} Â· {sim.total_runs} runs
+          {new Date(sim.created_at).toISOString().slice(0, 19).replace("T", " ")} · {sim.total_runs} runs
         </span>
       </div>
       <span
