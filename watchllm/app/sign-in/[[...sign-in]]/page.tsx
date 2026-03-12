@@ -5,7 +5,8 @@ export default function SignInPage() {
     <div
       style={{
         minHeight: "100vh",
-        background: "#000000",
+        /* Cyber-Plasma Liquid Void: transparent to show liquid bg */
+        background: "transparent",
         display: "flex",
         alignItems: "center",
         justifyContent: "center",

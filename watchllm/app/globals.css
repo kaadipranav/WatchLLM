@@ -2,44 +2,65 @@
 @import "tailwindcss";
 
 /* ============================================================
-   WatchLLM — "Liquid Iridescent Dark" design system
-   Linear × cybersecurity terminal aesthetic
+   WatchLLM — "Cyber-Plasma Liquid Void" design system
+   Dark void + living liquid plasma gradients
    ============================================================ */
 
+/* -- Cyber-Plasma Liquid Void: Tailwind v4 theme extension -- */
+@theme {
+  --color-base: #0A0A0A;
+  --color-plasma-1: #00F0FF;
+  --color-plasma-2: #6E00FF;
+  --color-plasma-3: #FF2A8C;
+  --color-glass: rgba(255, 255, 255, 0.12);
+}
+
 :root {
+  /* --- Cyber-Plasma Liquid Void palette --- */
+  --base:     #0A0A0A;
+  --plasma-1: #00F0FF;  /* electric cyan */
+  --plasma-2: #6E00FF;  /* deep violet */
+  --plasma-3: #FF2A8C;  /* hot magenta */
+  --glass:    rgba(255, 255, 255, 0.12);
+
   /* --- Backgrounds --- */
-  --bg-primary:   #080808;
+  --bg-primary:   #0A0A0A;
   --bg-secondary: #0c0c0c;
-  --bg-card:      rgba(255, 255, 255, 0.03);
+  --bg-card:      rgba(255, 255, 255, 0.12);
 
   /* --- Text --- */
   --text-primary:   #ffffff;
   --text-secondary: rgba(255, 255, 255, 0.5);
   --text-muted:     rgba(255, 255, 255, 0.3);
 
-  /* --- Chromatic accent trio (used as glows / borders / highlights — never fills) --- */
-  --accent-cyan:   #00D4FF;
-  --accent-violet: #7B61FF;
-  --accent-coral:  #FF4D6D;
+  /* --- Chromatic accent trio (plasma) --- */
+  --accent-cyan:   #00F0FF;
+  --accent-violet: #6E00FF;
+  --accent-coral:  #FF2A8C;
 
-  /* --- Semantic aliases (kept for backwards compatibility with existing components) --- */
-  --accent-failure: #FF4D6D;   /* coral */
+  /* --- Semantic aliases --- */
+  --accent-failure: #FF2A8C;
   --accent-warning: #FFCC00;
-  --accent-focus:   #00D4FF;   /* cyan doubles as focus */
+  --accent-focus:   #00F0FF;
 
   /* --- Borders --- */
-  --border-subtle: rgba(255, 255, 255, 0.08);
-  --border-faint:  rgba(255, 255, 255, 0.05);
+  --border-subtle: rgba(255, 255, 255, 0.10);
+  --border-faint:  rgba(255, 255, 255, 0.06);
 
   /* --- Typography --- */
   --font-sans: "Geist", ui-sans-serif, system-ui, sans-serif;
   --font-mono: "Geist Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
 
-  /* --- Iridescent glow values (used in utilities below) --- */
-  --iridescent-glow:
-    0 0 0 1px rgba(0, 212, 255, 0.15),
-    0 0 12px rgba(0, 212, 255, 0.08),
-    0 0 24px rgba(123, 97, 255, 0.06);
+  /* --- Plasma glow values --- */
+  --plasma-glow:
+    0 0 0 1px rgba(0, 240, 255, 0.18),
+    0 0 12px rgba(0, 240, 255, 0.10),
+    0 0 28px rgba(110, 0, 255, 0.08);
+
+  /* -- Cyber-Plasma Liquid Void: neon text shadow -- */
+  --neon-cyan:    0 0 8px rgba(0, 240, 255, 0.6), 0 0 20px rgba(0, 240, 255, 0.2);
+  --neon-violet:  0 0 8px rgba(110, 0, 255, 0.6), 0 0 20px rgba(110, 0, 255, 0.2);
+  --neon-magenta: 0 0 8px rgba(255, 42, 140, 0.6), 0 0 20px rgba(255, 42, 140, 0.2);
 }
 
 /* ============================================================
@@ -58,16 +79,14 @@ html {
   -moz-osx-font-smoothing: grayscale;
 }
 
-/* ============================================================
-   Noise texture overlay — adds subtle grain depth to bg
-   ============================================================ */
+/* -- Cyber-Plasma Liquid Void: noise texture overlay -- */
 body::before {
   content: "";
   position: fixed;
   inset: 0;
   z-index: 0;
   pointer-events: none;
-  opacity: 0.03;
+  opacity: 0.04;
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='200' height='200' filter='url(%23noise)' opacity='1'/%3E%3C/svg%3E");
   background-repeat: repeat;
   background-size: 200px 200px;
@@ -76,10 +95,12 @@ body::before {
 body {
   position: relative;
   font-family: var(--font-sans);
-  background: var(--bg-primary);
+  background: var(--base);
   color: var(--text-primary);
   font-size: 14px;
   line-height: 1.5;
+  /* -- Cyber-Plasma Liquid Void: base text neon glow -- */
+  letter-spacing: -0.02em;
 }
 
 /* ============================================================
@@ -110,9 +131,9 @@ code, pre, .mono {
 }
 
 /* ============================================================
-   Iridescent border utility
-   — 1px conic-gradient border cycling through accent trio at
-     40% opacity, with layered glow
+   Cyber-Plasma Liquid Void: flowing plasma border
+   — conic-gradient border cycling through plasma trio,
+     continuously flows clockwise. Hover speeds up 2x.
    ============================================================ */
 .iridescent-border {
   position: relative;
@@ -127,10 +148,10 @@ code, pre, .mono {
   padding: 1px;
   background: conic-gradient(
     from var(--_ib-angle, 0deg),
-    rgba(0, 212, 255, 0.4),
-    rgba(123, 97, 255, 0.4),
-    rgba(255, 77, 109, 0.4),
-    rgba(0, 212, 255, 0.4)
+    rgba(0, 240, 255, 0.5),
+    rgba(110, 0, 255, 0.5),
+    rgba(255, 42, 140, 0.5),
+    rgba(0, 240, 255, 0.5)
   );
   -webkit-mask:
     linear-gradient(#fff 0 0) content-box,
@@ -140,7 +161,7 @@ code, pre, .mono {
   pointer-events: none;
 }
 
-/* Slow rotation of the gradient angle for a living-border effect */
+/* -- Cyber-Plasma Liquid Void: rotating plasma border angle -- */
 @property --_ib-angle {
   syntax: "<angle>";
   inherits: false;
@@ -153,37 +174,44 @@ code, pre, .mono {
 
 .iridescent-border {
   animation: iridescent-spin 8s linear infinite;
-  box-shadow: var(--iridescent-glow);
+  box-shadow: var(--plasma-glow);
+}
+
+/* -- Cyber-Plasma Liquid Void: hover speeds up border flow 2x -- */
+.iridescent-border:hover {
+  animation-duration: 4s;
 }
 
 /* ============================================================
-   Glow text utility
-   — soft cyan text-shadow at 60% opacity
+   Cyber-Plasma Liquid Void: neon glow text utilities
    ============================================================ */
 .glow-text {
-  text-shadow:
-    0 0 8px rgba(0, 212, 255, 0.6),
-    0 0 20px rgba(0, 212, 255, 0.25);
+  text-shadow: var(--neon-cyan);
+}
+.glow-text-violet {
+  text-shadow: var(--neon-violet);
+}
+.glow-text-magenta {
+  text-shadow: var(--neon-magenta);
 }
 
 /* ============================================================
-   Surface card base
-   — backdrop blur glass effect with iridescent border
+   Cyber-Plasma Liquid Void: glassmorphic surface card
    ============================================================ */
 .card {
-  background: var(--bg-card);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
+  background: var(--glass);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
   border-radius: 0.75rem;
+  border: 1px solid rgba(255, 255, 255, 0.10);
 }
 
 .card.iridescent-border {
-  /* iridescent-border already provides the 1px chromatic border */
+  border: none;
 }
 
-/* Fallback plain border for cards that don't use .iridescent-border */
 .card:not(.iridescent-border) {
-  border: 1px solid var(--border-subtle);
+  border: 1px solid rgba(255, 255, 255, 0.10);
 }
 
 /* ============================================================
@@ -199,11 +227,9 @@ code, pre, .mono {
   background: rgba(255, 255, 255, 0.2);
 }
 
-/* ============================================================
-   Focus ring — cyan (never outline: none without replacement)
-   ============================================================ */
+/* -- Cyber-Plasma Liquid Void: focus ring -- */
 :focus-visible {
-  outline: 2px solid rgba(0, 212, 255, 0.5);
+  outline: 2px solid rgba(0, 240, 255, 0.5);
   outline-offset: 2px;
 }
 
@@ -221,40 +247,46 @@ a[href] {
 }
 
 /* ============================================================
-   Button base (command style)
+   Cyber-Plasma Liquid Void: button base (glass + plasma accent)
    ============================================================ */
 button, .btn {
   font-family: var(--font-sans);
   border: 1px solid rgba(255, 255, 255, 0.15);
-  background: transparent;
+  background: var(--glass);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
   color: white;
   cursor: pointer;
-  transition: background 150ms ease, color 150ms ease, border-color 150ms ease, box-shadow 150ms ease;
+  transition: background 120ms ease, color 120ms ease, border-color 120ms ease,
+              box-shadow 120ms ease, transform 120ms ease;
 }
+/* -- Cyber-Plasma Liquid Void: hover melt effect -- */
 button:hover, .btn:hover {
-  background: #ffffff;
-  color: #000000;
+  background: linear-gradient(135deg, var(--plasma-1), var(--plasma-2), var(--plasma-3));
+  color: #ffffff;
   border-color: transparent;
-  box-shadow: none;
+  box-shadow: 0 0 20px rgba(0, 240, 255, 0.3), 0 0 40px rgba(110, 0, 255, 0.15);
+  transform: scale(1.02);
+}
+button:active, .btn:active {
+  transform: scale(0.98);
 }
 
-/* ============================================================
-   Selection
-   ============================================================ */
+/* -- Cyber-Plasma Liquid Void: selection -- */
 ::selection {
-  background: rgba(0, 212, 255, 0.25);
+  background: rgba(0, 240, 255, 0.25);
   color: white;
 }
 
 /* ============================================================
-   Pulsing status dot
+   Cyber-Plasma Liquid Void: pulsing status dot
    ============================================================ */
 .pulse-dot {
   display: inline-block;
   width: 0.5rem;
   height: 0.5rem;
   border-radius: 999px;
-  background: #FF4D6D;
+  background: var(--plasma-3);
   flex-shrink: 0;
   animation: pulse-glow 2s ease-in-out infinite;
 }
@@ -263,16 +295,15 @@ button:hover, .btn:hover {
   0%, 100% {
     opacity: 1;
     transform: scale(1);
-    box-shadow: 0 0 4px rgba(255, 77, 109, 0.6);
+    box-shadow: 0 0 4px rgba(255, 42, 140, 0.6);
   }
   50% {
     opacity: 0.5;
     transform: scale(1.5);
-    box-shadow: 0 0 10px rgba(255, 77, 109, 0.9), 0 0 20px rgba(255, 77, 109, 0.4);
+    box-shadow: 0 0 10px rgba(255, 42, 140, 0.9), 0 0 20px rgba(255, 42, 140, 0.4);
   }
 }
 
-/* Generic status dot — color driven by --dot-color custom property */
 .status-dot {
   display: inline-block;
   width: 6px;
@@ -302,7 +333,7 @@ button:hover, .btn:hover {
 }
 
 /* ============================================================
-   Insane Liquid Hero Background
+   Cyber-Plasma Liquid Void: hero background blobs
    ============================================================ */
 .insane-liquid-bg {
   position: absolute;
@@ -310,7 +341,7 @@ button:hover, .btn:hover {
   overflow: hidden;
   z-index: 0;
   pointer-events: none;
-  background: var(--bg-primary);
+  background: var(--base);
 }
 
 .liquid-blob {
@@ -318,11 +349,12 @@ button:hover, .btn:hover {
   filter: blur(80px);
   border-radius: 50%;
   opacity: 0.35;
-  animation: liquid-float 20s infinite alternate ease-in-out;
+  animation: liquid-float 28s infinite alternate ease-in-out;
   mix-blend-mode: screen;
+  will-change: transform;
 }
 .liquid-blob-1 {
-  background: rgba(0, 212, 255, 0.4);
+  background: rgba(0, 240, 255, 0.4);
   width: 60vw;
   height: 60vw;
   top: -20%;
@@ -330,7 +362,7 @@ button:hover, .btn:hover {
   animation-delay: 0s;
 }
 .liquid-blob-2 {
-  background: rgba(123, 97, 255, 0.3);
+  background: rgba(110, 0, 255, 0.3);
   width: 50vw;
   height: 50vw;
   bottom: -10%;
@@ -338,7 +370,7 @@ button:hover, .btn:hover {
   animation-delay: -5s;
 }
 .liquid-blob-3 {
-  background: rgba(255, 77, 109, 0.15);
+  background: rgba(255, 42, 140, 0.15);
   width: 55vw;
   height: 55vw;
   top: 40%;
@@ -354,14 +386,16 @@ button:hover, .btn:hover {
 }
 
 /* ============================================================
-   Insane Clickable Buttons
+   Cyber-Plasma Liquid Void: primary CTA button
    ============================================================ */
 .btn-insane-primary {
   position: relative;
   overflow: hidden;
-  background: #ffffff;
-  color: #000;
-  border: none;
+  background: rgba(255, 255, 255, 0.12);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  color: #ffffff;
+  border: 1px solid rgba(0, 240, 255, 0.3);
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -372,8 +406,9 @@ button:hover, .btn:hover {
   letter-spacing: 0.08em;
   text-transform: uppercase;
   text-decoration: none;
-  box-shadow: 0 0 10px rgba(0, 212, 255, 0), 0 0 30px rgba(0, 212, 255, 0);
-  transition: transform 150ms ease, box-shadow 300ms ease, background 300ms ease, color 300ms ease;
+  text-shadow: var(--neon-cyan);
+  box-shadow: 0 0 10px rgba(0, 240, 255, 0), 0 0 30px rgba(0, 240, 255, 0);
+  transition: transform 120ms ease, box-shadow 300ms ease, background 120ms ease, border-color 300ms ease;
   z-index: 1;
   cursor: pointer;
 }
@@ -384,16 +419,18 @@ button:hover, .btn:hover {
   top: 0; left: -100%;
   width: 50%;
   height: 100%;
-  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.8), transparent);
+  background: linear-gradient(90deg, transparent, rgba(0, 240, 255, 0.5), transparent);
   transform: skewX(-20deg);
   transition: none;
   pointer-events: none;
 }
 
+/* -- Cyber-Plasma Liquid Void: melt hover -- */
 .btn-insane-primary:hover {
-  background: #00D4FF;
-  color: #000;
-  box-shadow: 0 0 20px rgba(0, 212, 255, 0.6), 0 0 60px rgba(0, 212, 255, 0.3);
+  background: linear-gradient(135deg, var(--plasma-1), var(--plasma-2), var(--plasma-3));
+  border-color: transparent;
+  color: #ffffff;
+  box-shadow: 0 0 20px rgba(0, 240, 255, 0.6), 0 0 60px rgba(110, 0, 255, 0.3);
   transform: translateY(-2px) scale(1.02);
 }
 
@@ -403,15 +440,18 @@ button:hover, .btn:hover {
 
 .btn-insane-primary:active {
   transform: translateY(1px) scale(0.95);
-  box-shadow: 0 0 10px rgba(0, 212, 255, 0.4);
+  box-shadow: 0 0 10px rgba(0, 240, 255, 0.4);
 }
 
 @keyframes insane-shine {
   100% { left: 200%; }
 }
 
+/* -- Cyber-Plasma Liquid Void: secondary glass button -- */
 .btn-insane-secondary {
-  background: transparent;
+  background: rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
   color: #aaaaaa;
   border: 1px solid rgba(255, 255, 255, 0.15);
   display: inline-flex;
@@ -424,16 +464,17 @@ button:hover, .btn:hover {
   letter-spacing: 0.08em;
   text-transform: uppercase;
   text-decoration: none;
-  box-shadow: inset 0 0 0 rgba(0, 212, 255, 0);
+  box-shadow: inset 0 0 0 rgba(0, 240, 255, 0);
   transition: all 300ms ease;
   cursor: pointer;
 }
 
 .btn-insane-secondary:hover {
   color: #ffffff;
-  border-color: rgba(0, 212, 255, 0.6);
-  background: rgba(0, 212, 255, 0.05);
-  box-shadow: 0 0 20px rgba(0, 212, 255, 0.2), inset 0 0 15px rgba(0, 212, 255, 0.1);
+  border-color: rgba(0, 240, 255, 0.6);
+  background: rgba(0, 240, 255, 0.08);
+  box-shadow: 0 0 20px rgba(0, 240, 255, 0.2), inset 0 0 15px rgba(0, 240, 255, 0.1);
+  text-shadow: var(--neon-cyan);
   transform: translateY(-1px) scale(1.01);
 }
 
@@ -441,28 +482,171 @@ button:hover, .btn:hover {
   transform: translateY(1px) scale(0.96);
 }
 
-/* Base glowing pulse for hero words or elements */
+/* -- Cyber-Plasma Liquid Void: hero breath pulse -- */
 .pulse-breath {
   animation: hero-breath 4s ease-in-out infinite;
 }
 @keyframes hero-breath {
   0%, 100% { filter: drop-shadow(0 0 10px rgba(255,255,255,0.1)); }
-  50% { filter: drop-shadow(0 0 20px rgba(255,255,255,0.4)) drop-shadow(0 0 40px rgba(0, 212, 255, 0.2)); }
+  50% { filter: drop-shadow(0 0 20px rgba(255,255,255,0.4)) drop-shadow(0 0 40px rgba(0, 240, 255, 0.3)); }
 }
 
-/* Magic Bento Setup */
+/* ============================================================
+   Cyber-Plasma Liquid Void: glassmorphic bento card
+   ============================================================ */
 .bento-card {
   position: relative;
-  background: rgba(255, 255, 255, 0.025);
-  border: 1px solid rgba(255, 255, 255, 0.05);
+  background: var(--glass);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border: 1px solid rgba(255, 255, 255, 0.10);
   border-radius: 12px;
   transition: transform 300ms cubic-bezier(0.18, 0.89, 0.32, 1.28), box-shadow 300ms ease, border-color 300ms ease;
 }
 
 .bento-card:hover {
   transform: translateY(-4px) scale(1.01);
-  border-color: rgba(255, 255, 255, 0.12);
-  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.4), 0 0 24px rgba(123, 97, 255, 0.1);
-  background: rgba(255, 255, 255, 0.035);
+  border-color: rgba(0, 240, 255, 0.2);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.4), 0 0 24px rgba(110, 0, 255, 0.12), 0 0 48px rgba(0, 240, 255, 0.06);
 }
+
+/* ============================================================
+   Cyber-Plasma Liquid Void: scanline overlay (hover only, 5% opacity)
+   ============================================================ */
+.bento-card::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  opacity: 0;
+  background: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 2px,
+    rgba(0, 240, 255, 0.03) 2px,
+    rgba(0, 240, 255, 0.03) 4px
+  );
+  transition: opacity 300ms ease;
+}
+.bento-card:hover::after {
+  opacity: 0.05;
+}
+
+/* ============================================================
+   Cyber-Plasma Liquid Void: liquid plasma border for bento cards
+   — animated conic-gradient ribbon
+   ============================================================ */
+.plasma-border {
+  position: relative;
+  border: none;
+}
+.plasma-border::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1px;
+  background: conic-gradient(
+    from var(--_pb-angle, 0deg),
+    rgba(0, 240, 255, 0.4),
+    rgba(110, 0, 255, 0.4),
+    rgba(255, 42, 140, 0.4),
+    rgba(0, 240, 255, 0.4)
+  );
+  -webkit-mask:
+    linear-gradient(#fff 0 0) content-box,
+    linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+}
+
+@property --_pb-angle {
+  syntax: "<angle>";
+  inherits: false;
+  initial-value: 0deg;
+}
+
+@keyframes plasma-spin {
+  to { --_pb-angle: 360deg; }
+}
+
+.plasma-border {
+  animation: plasma-spin 10s linear infinite;
+  box-shadow: var(--plasma-glow);
+}
+
+.plasma-border:hover {
+  animation-duration: 5s;
+}
+
+/* ============================================================
+   Cyber-Plasma Liquid Void: mobile performance reduction
+   ============================================================ */
+@media (hover: none) {
+  .liquid-blob {
+    animation-duration: 40s;
+    opacity: 0.2;
+  }
+  .iridescent-border,
+  .plasma-border {
+    animation-duration: 16s;
+  }
+  .bento-card::after {
+    display: none;
+  }
+  /* Cyber-Plasma Liquid Void: reduce LiquidBackground complexity on touch */
+  .plasma-vein-1, .plasma-vein-2, .plasma-vein-3 {
+    animation-duration: 50s !important;
+    opacity: 0.5;
+  }
+}
+
+/* ============================================================
+   Cyber-Plasma Liquid Void: LiquidBackground plasma flow keyframes
+   ============================================================ */
+@keyframes plasma-flow-1 {
+  0%   { transform: translate(0, 0) scale(1) rotate(0deg); }
+  50%  { transform: translate(40px, -60px) scale(1.15) rotate(3deg); }
+  100% { transform: translate(-30px, 30px) scale(0.95) rotate(-2deg); }
+}
+
+@keyframes plasma-flow-2 {
+  0%   { transform: translate(0, 0) scale(1) rotate(0deg); }
+  50%  { transform: translate(-50px, 40px) scale(1.1) rotate(-4deg); }
+  100% { transform: translate(30px, -20px) scale(0.9) rotate(2deg); }
+}
+
+@keyframes plasma-flow-3 {
+  0%   { transform: translate(0, 0) scale(1) rotate(0deg); }
+  50%  { transform: translate(25px, 50px) scale(1.2) rotate(5deg); }
+  100% { transform: translate(-40px, -30px) scale(0.85) rotate(-3deg); }
+}
+
+@keyframes plasma-conic-rotate {
+  to { transform: rotate(360deg); }
+}
+
+/* ============================================================
+   Cyber-Plasma Liquid Void: glassmorphic sidebar
+   ============================================================ */
+.sidebar-glass {
+  background: rgba(10, 10, 10, 0.85);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border-right: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+/* ============================================================
+   Cyber-Plasma Liquid Void: glassmorphic dashboard panel
+   ============================================================ */
+.glass-panel {
+  background: var(--glass);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border: 1px solid rgba(255, 255, 255, 0.10);
+  border-radius: 0.75rem;
+}
+
 

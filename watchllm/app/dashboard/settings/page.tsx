@@ -7,15 +7,15 @@ export default function SettingsPage() {
           fontWeight: 600,
           letterSpacing: "-0.02em",
           marginBottom: "1rem",
+          /* Cyber-Plasma Liquid Void: neon heading */
+          textShadow: "0 0 8px rgba(110, 0, 255, 0.3)",
         }}
       >
         Settings
       </h1>
       <div
+        className="glass-panel plasma-border"
         style={{
-          backgroundColor: "#0a0a0a",
-          border: "1px solid rgba(255,255,255,0.08)",
-          borderRadius: "0.75rem",
           padding: "2rem",
           fontFamily: 'var(--font-mono, monospace)',
           fontSize: "0.85rem",

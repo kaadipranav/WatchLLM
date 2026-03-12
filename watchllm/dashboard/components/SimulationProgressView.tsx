@@ -98,9 +98,9 @@ const ATTACK_CATEGORIES = [
 
 function severityColor(severity: number | null | undefined): string {
   if (severity == null) return "rgba(255,255,255,0.3)";
-  if (severity <= 2) return "rgba(255,255,255,0.45)"; // neutral — no green for success
-  if (severity === 3) return "#FFCC00"; // warning
-  return "#FF3B30"; // failure
+  if (severity <= 2) return "rgba(255,255,255,0.45)";
+  if (severity === 3) return "#FFCC00";
+  return "#FF2A8C"; // Cyber-Plasma Liquid Void: hot magenta for failure
 }
 
 export function SimulationProgressView({ simulationId }: Props) {
@@ -229,7 +229,7 @@ export function SimulationProgressView({ simulationId }: Props) {
 
   return (
     <div style={wrapperStyle}>
-      <section className="bento-card" style={backgroundStyle}>
+      <section className="bento-card plasma-border" style={backgroundStyle}>
         <div style={sectionTitleStyle}>Simulation Control</div>
         <div style={headlineStyle}>Simulation {simulationId}</div>
 
@@ -278,7 +278,7 @@ export function SimulationProgressView({ simulationId }: Props) {
                 style={{
                   borderBottom: "1px solid rgba(255,255,255,0.08)",
                   padding: "0.6rem 0.75rem",
-                  backgroundColor: "#000000",
+                  backgroundColor: "rgba(10, 10, 10, 0.6)",
                 }}
               >
                 <div
@@ -327,7 +327,7 @@ export function SimulationProgressView({ simulationId }: Props) {
             borderRadius: "0.5rem",
             border: "1px solid rgba(255,255,255,0.08)",
             padding: "0.75rem",
-            backgroundColor: "#0a0a0a",
+            backgroundColor: "rgba(10, 10, 10, 0.6)",
           }}
         >
           {failures.length === 0 ? (
@@ -349,7 +349,7 @@ export function SimulationProgressView({ simulationId }: Props) {
                     marginBottom: "0.5rem",
                     borderRadius: "0.5rem",
                     border: `1px solid ${severityColor(failure.severity)}`,
-                    backgroundColor: isSelected ? "rgba(255,255,255,0.08)" : "#0a0a0a",
+                    backgroundColor: isSelected ? "rgba(0, 240, 255, 0.08)" : "rgba(10, 10, 10, 0.6)",
                     color: "#ffffff",
                     cursor: "pointer",
                   }}

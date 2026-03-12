@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { ClerkProvider } from "@clerk/nextjs";
 import { dark } from "@clerk/themes";
+import { LiquidBackground } from "./components/LiquidBackground";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -17,7 +18,11 @@ export default function RootLayout({
   return (
     <ClerkProvider appearance={{ baseTheme: dark }}>
       <html lang="en">
-        <body>{children}</body>
+        <body>
+          {/* Cyber-Plasma Liquid Void: full-screen living background */}
+          <LiquidBackground />
+          <div style={{ position: "relative", zIndex: 1 }}>{children}</div>
+        </body>
       </html>
     </ClerkProvider>
   );

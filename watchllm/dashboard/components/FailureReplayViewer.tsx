@@ -71,9 +71,9 @@ const suggestedFixStyle: React.CSSProperties = {
 };
 
 function severityColor(severity: number): string {
-  if (severity <= 2) return "rgba(255,255,255,0.45)"; // neutral — no green
-  if (severity === 3) return "#FFCC00"; // warning
-  return "#FF3B30"; // failure
+  if (severity <= 2) return "rgba(255,255,255,0.45)";
+  if (severity === 3) return "#FFCC00";
+  return "#FF2A8C"; // Cyber-Plasma Liquid Void: hot magenta
 }
 
 export function FailureReplayViewer({ simulationId, runId }: Props) {
@@ -115,7 +115,7 @@ export function FailureReplayViewer({ simulationId, runId }: Props) {
 
   if (loading && !trace) {
     return (
-      <section className="bento-card" style={containerStyle}>
+      <section className="bento-card plasma-border" style={containerStyle}>
         <div style={titleStyle}>Failure Replay</div>
         <div style={{ fontSize: "0.85rem", color: "rgba(255,255,255,0.3)" }}>
           Loading replay from R2…
@@ -126,16 +126,16 @@ export function FailureReplayViewer({ simulationId, runId }: Props) {
 
   if (error) {
     return (
-      <section className="bento-card" style={containerStyle}>
+      <section className="bento-card plasma-border" style={containerStyle}>
         <div style={titleStyle}>Failure Replay</div>
-        <div style={{ fontSize: "0.85rem", color: "#FF3B30" }}>{error}</div>
+        <div style={{ fontSize: "0.85rem", color: "#FF2A8C" }}>{error}</div>
       </section>
     );
   }
 
   if (!trace) {
     return (
-      <section className="bento-card" style={containerStyle}>
+      <section className="bento-card plasma-border" style={containerStyle}>
         <div style={titleStyle}>Failure Replay</div>
         <div style={{ fontSize: "0.85rem", color: "rgba(255,255,255,0.3)" }}>
           No replay data loaded.
@@ -148,7 +148,7 @@ export function FailureReplayViewer({ simulationId, runId }: Props) {
     trace.conversation.length > 0 ? trace.conversation.length - 1 : -1;
 
   return (
-    <section className="bento-card" style={containerStyle}>
+    <section className="bento-card plasma-border" style={containerStyle}>
       <div style={titleStyle}>Failure Replay</div>
       <div style={headlineStyle}>
         Simulation {simulationId} · Run {runId}
@@ -202,7 +202,7 @@ export function FailureReplayViewer({ simulationId, runId }: Props) {
               style={{
                 padding: "0.75rem 0.85rem",
                 borderBottom: "1px solid rgba(255,255,255,0.08)",
-                backgroundColor: isBreaking ? "rgba(255,255,255,0.08)" : "#000000",
+                backgroundColor: isBreaking ? "rgba(255, 42, 140, 0.08)" : "rgba(10, 10, 10, 0.6)",
               }}
             >
               <div
@@ -220,7 +220,7 @@ export function FailureReplayViewer({ simulationId, runId }: Props) {
                   <span
                     style={{
                       fontSize: "0.75rem",
-                      color: "#FF3B30",
+                      color: "#FF2A8C",
                       textTransform: "uppercase",
                       letterSpacing: "0.08em",
                     }}

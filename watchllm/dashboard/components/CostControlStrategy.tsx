@@ -11,6 +11,8 @@ const containerStyle: React.CSSProperties = {
   padding: "24px",
   fontFamily:
     'var(--font-mono, "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace)',
+  /* Cyber-Plasma Liquid Void: subtle neon text glow */
+  textShadow: "0 0 4px rgba(0, 240, 255, 0.1)",
 };
 
 const titleStyle: React.CSSProperties = {
@@ -46,7 +48,7 @@ export function CostControlStrategy({ estimatedRuns }: Props) {
   const estimatedCost = safeRuns * 0.02;
 
   return (
-    <section className="bento-card" style={containerStyle}>
+    <section className="bento-card plasma-border" style={containerStyle}>
       <div style={titleStyle}>Cost Control Strategy</div>
       <div style={lineStyle}>
         Estimated runs: {safeRuns.toLocaleString("en-US")} | Estimated cost: ~$

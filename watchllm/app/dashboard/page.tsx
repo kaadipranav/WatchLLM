@@ -17,10 +17,10 @@ type SimulationSummary = {
 const CLI_COMMAND = "watchllm attack --agent your-agent.py";
 
 const STATUS_BORDER: Record<string, string> = {
-  running:  "#00D4FF",
-  failed:   "#FF4D6D",
-  passed:   "#7B61FF",
-  complete: "#7B61FF",
+  running:  "#00F0FF",
+  failed:   "#FF2A8C",
+  passed:   "#6E00FF",
+  complete: "#6E00FF",
 };
 
 // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
@@ -37,6 +37,8 @@ function PageHeader({ count }: { count: number }) {
           letterSpacing: "-0.02em",
           color: "#ffffff",
           marginBottom: "6px",
+          /* Cyber-Plasma Liquid Void: neon heading glow */
+          textShadow: "0 0 8px rgba(0, 240, 255, 0.3)",
         }}
       >
         Simulations
@@ -79,8 +81,8 @@ function CopyPill() {
         display: "inline-flex",
         alignItems: "center",
         gap: "10px",
-        background: pillHover ? "rgba(255,255,255,0.07)" : "rgba(255,255,255,0.05)",
-        border: "1px solid rgba(255,255,255,0.1)",
+        background: pillHover ? "rgba(255,255,255,0.10)" : "rgba(255,255,255,0.08)",
+        border: "1px solid rgba(0, 240, 255, 0.15)",
         padding: "6px 14px",
         cursor: "default",
         transition: "background 150ms ease",
@@ -92,8 +94,10 @@ function CopyPill() {
         style={{
           fontFamily: "var(--font-mono)",
           fontSize: "12px",
-          color: "#00D4FF",
+          color: "#00F0FF",
           userSelect: "all",
+          /* Cyber-Plasma Liquid Void: neon code glow */
+          textShadow: "0 0 6px rgba(0, 240, 255, 0.3)",
         }}
       >
         {CLI_COMMAND}
@@ -110,7 +114,7 @@ function CopyPill() {
           cursor: "pointer",
           display: "flex",
           alignItems: "center",
-          color: copied ? "#00D4FF" : iconHover ? "#00D4FF" : "#444",
+          color: copied ? "#00F0FF" : iconHover ? "#00F0FF" : "#444",
           transition: "color 150ms ease",
         }}
       >
@@ -129,7 +133,7 @@ function CopyPill() {
 function EmptyState() {
   return (
     <div
-      className="bento-card"
+      className="bento-card plasma-border"
       style={{
         padding: "60px 2rem",
         display: "flex",
@@ -186,7 +190,8 @@ function SimulationRow({
         alignItems: "center",
         justifyContent: "space-between",
         width: "100%",
-        background: isActive ? "rgba(255,255,255,0.05)" : "rgba(255,255,255,0.025)",
+        /* Cyber-Plasma Liquid Void: glass simulation row */
+        background: isActive ? "rgba(0, 240, 255, 0.06)" : "rgba(255,255,255,0.04)",
         border: "none",
         borderLeft: `2px solid ${accentColor}`,
         borderRadius: "4px",
@@ -196,6 +201,8 @@ function SimulationRow({
         opacity: visible ? 1 : 0,
         transform: visible ? "translateY(0)" : "translateY(8px)",
         transition: "opacity 200ms ease, transform 200ms ease, background 150ms ease",
+        backdropFilter: "blur(12px)",
+        WebkitBackdropFilter: "blur(12px)",
       }}
     >
       <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>

@@ -44,8 +44,9 @@ export function Sidebar() {
           fontFamily: "var(--font-sans)",
           fontWeight: 400,
           color: isActive ? "#ffffff" : isHovered ? "#cccccc" : "#555555",
+          /* Cyber-Plasma Liquid Void: glass sidebar item backgrounds */
           background: isActive
-            ? "rgba(255,255,255,0.07)"
+            ? "rgba(0, 240, 255, 0.08)"
             : isHovered
             ? "rgba(255,255,255,0.04)"
             : "transparent",
@@ -53,9 +54,11 @@ export function Sidebar() {
           letterSpacing: "0",
           cursor: "pointer",
           transition: "color 150ms ease, background 150ms ease",
+          /* Cyber-Plasma Liquid Void: neon glow on active */
+          textShadow: isActive ? "0 0 8px rgba(0, 240, 255, 0.4)" : "none",
         }}
       >
-        {/* Animated active indicator — scaleY 0→1 from bottom */}
+        {/* Cyber-Plasma Liquid Void: plasma active indicator */}
         <span
           style={{
             position: "absolute",
@@ -63,10 +66,11 @@ export function Sidebar() {
             top: 0,
             bottom: 0,
             width: "2px",
-            background: "#7B61FF",
+            background: "linear-gradient(180deg, #00F0FF, #6E00FF)",
             transformOrigin: "bottom",
             transform: isActive ? "scaleY(1)" : "scaleY(0)",
             transition: "transform 150ms ease",
+            boxShadow: isActive ? "0 0 8px rgba(0, 240, 255, 0.5)" : "none",
           }}
         />
         {item.label}
@@ -76,11 +80,10 @@ export function Sidebar() {
 
   return (
     <aside
+      className="sidebar-glass"
       style={{
         width: "200px",
         minHeight: "100vh",
-        background: "#080808",
-        borderRight: "1px solid rgba(255,255,255,0.06)",
         display: "flex",
         flexDirection: "column",
         padding: "24px 0",
@@ -99,14 +102,15 @@ export function Sidebar() {
           textDecoration: "none",
         }}
       >
-        {/* Cyan vertical bar */}
+        {/* Cyber-Plasma Liquid Void: plasma vertical bar */}
         <span
           style={{
             display: "inline-block",
             width: "2px",
             height: "12px",
-            background: "#00D4FF",
+            background: "linear-gradient(180deg, #00F0FF, #6E00FF)",
             flexShrink: 0,
+            boxShadow: "0 0 6px rgba(0, 240, 255, 0.5)",
           }}
         />
         <span
@@ -117,6 +121,7 @@ export function Sidebar() {
             letterSpacing: "0.15em",
             color: "#ffffff",
             textTransform: "uppercase",
+            textShadow: "0 0 8px rgba(0, 240, 255, 0.3)",
           }}
         >
           WatchLLM
@@ -132,7 +137,8 @@ export function Sidebar() {
       <div
         style={{
           height: "1px",
-          background: "rgba(255,255,255,0.05)",
+          /* Cyber-Plasma Liquid Void: subtle plasma divider */
+          background: "linear-gradient(90deg, transparent, rgba(0, 240, 255, 0.15), rgba(110, 0, 255, 0.1), transparent)",
           margin: "8px 0",
         }}
       />
