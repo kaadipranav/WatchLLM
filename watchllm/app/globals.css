@@ -1,4 +1,4 @@
-@import url("https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700&family=Geist+Mono:wght@400;500&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700&family=Geist+Mono:wght@400;500&family=Inter:opsz,wght@14..32,100..900&display=swap");
 @import "tailwindcss";
 
 /* ============================================================
@@ -48,7 +48,7 @@
   --border-faint:  rgba(255, 255, 255, 0.06);
 
   /* --- Typography --- */
-  --font-sans: "Geist", ui-sans-serif, system-ui, sans-serif;
+  --font-sans: "Geist", "Neue Haas Grotesk", "Inter var", "Inter", system-ui, sans-serif;
   --font-mono: "Geist Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
 
   /* --- Plasma glow values --- */
@@ -95,12 +95,15 @@ body::before {
 body {
   position: relative;
   font-family: var(--font-sans);
+  font-weight: 430;
+  font-variation-settings: "wght" 430, "opsz" 18;
   background: var(--base);
   color: var(--text-primary);
   font-size: 14px;
-  line-height: 1.5;
+  line-height: 1.56;
   /* -- Cyber-Plasma Liquid Void: base text neon glow -- */
-  letter-spacing: -0.02em;
+  letter-spacing: -0.015em;
+  text-shadow: 0 0 6px rgba(0, 240, 255, 0.2);
 }
 
 /* ============================================================
@@ -108,14 +111,52 @@ body {
    ============================================================ */
 h1, h2, h3, h4 {
   font-family: var(--font-sans);
-  font-weight: 600;
-  letter-spacing: -0.01em;
+  font-weight: 620;
+  font-variation-settings: "wght" 620, "opsz" 20;
+  letter-spacing: -0.02em;
+  text-shadow: 0 0 8px rgba(0, 240, 255, 0.4);
 }
 
 h5, h6 {
   font-family: var(--font-sans);
-  font-weight: 500;
-  letter-spacing: -0.005em;
+  font-weight: 560;
+  font-variation-settings: "wght" 560, "opsz" 18;
+  letter-spacing: -0.02em;
+  text-shadow: 0 0 7px rgba(0, 240, 255, 0.35);
+}
+
+p,
+li,
+span,
+label {
+  font-variation-settings: "wght" 430, "opsz" 17;
+}
+
+/* Premium Grotesk upgrade for fancy corporate feel */
+button,
+input,
+textarea,
+select,
+.label-action,
+.card,
+.bento-card,
+.glass-panel {
+  font-family: var(--font-sans);
+  font-variation-settings: "wght" 460, "opsz" 18;
+  letter-spacing: -0.015em;
+}
+
+/* Premium Grotesk upgrade for fancy corporate feel */
+button:hover,
+input:hover,
+textarea:hover,
+select:hover,
+button:focus-visible,
+input:focus-visible,
+textarea:focus-visible,
+select:focus-visible,
+a:hover {
+  text-shadow: 0 0 6px rgba(0, 240, 255, 0.4);
 }
 
 .label-action {
@@ -402,7 +443,8 @@ button:active, .btn:active {
   padding: 0.6rem 1.5rem;
   font-family: var(--font-sans);
   font-size: 13px;
-  font-weight: 500;
+  font-weight: 560;
+  font-variation-settings: "wght" 560, "opsz" 18;
   letter-spacing: 0.08em;
   text-transform: uppercase;
   text-decoration: none;
@@ -460,7 +502,8 @@ button:active, .btn:active {
   padding: 0.6rem 1.5rem;
   font-family: var(--font-sans);
   font-size: 13px;
-  font-weight: 500;
+  font-weight: 540;
+  font-variation-settings: "wght" 540, "opsz" 18;
   letter-spacing: 0.08em;
   text-transform: uppercase;
   text-decoration: none;

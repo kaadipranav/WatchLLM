@@ -33,7 +33,8 @@ function PageHeader({ count }: { count: number }) {
         style={{
           fontFamily: "var(--font-sans)",
           fontSize: "22px",
-          fontWeight: 600,
+          // Premium Grotesk upgrade for fancy corporate feel
+          fontWeight: 640,
           letterSpacing: "-0.02em",
           color: "#ffffff",
           marginBottom: "6px",
@@ -114,6 +115,8 @@ function CopyPill() {
           cursor: "pointer",
           display: "flex",
           alignItems: "center",
+          // Premium Grotesk upgrade for fancy corporate feel
+          fontFamily: "var(--font-sans)",
           color: copied ? "#00F0FF" : iconHover ? "#00F0FF" : "#444",
           transition: "color 150ms ease",
         }}

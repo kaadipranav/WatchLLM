@@ -35,7 +35,8 @@ export default function Home() {
             style={{
               fontFamily: "var(--font-sans)",
               fontSize: "52px",
-              fontWeight: 600,
+              // Premium Grotesk upgrade for fancy corporate feel
+              fontWeight: 640,
               letterSpacing: "-0.02em",
               lineHeight: 1.1,
               marginBottom: "0.75rem",
@@ -126,7 +127,9 @@ export default function Home() {
               <span className="pulse-dot" />
               <span
                 style={{
-                  fontFamily: "var(--font-mono)",
+                  // Premium Grotesk upgrade for fancy corporate feel
+                  fontFamily: "var(--font-sans)",
+                  fontWeight: 520,
                   fontSize: "11px",
                   color: "#555",
                 }}
