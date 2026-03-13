@@ -7,8 +7,7 @@ type WorkerR2Bucket = {
 };
 
 export interface Env {
-  GROQ_API_KEY: string;
-  ANTHROPIC_API_KEY: string;
+  OPENROUTER_API_KEY: string;
   NEXT_PUBLIC_SUPABASE_URL: string;
   SUPABASE_SERVICE_ROLE_KEY: string;
   TRACES_BUCKET: WorkerR2Bucket; // R2 binding for bucket `watchllm-traces`
@@ -64,7 +63,7 @@ type WorkerErrorContext = {
   simulation_id: string;
   run_id: string;
   category: string;
-  provider?: "groq" | "anthropic" | "r2" | "supabase" | "target-agent";
+  provider?: "openrouter" | "r2" | "supabase" | "target-agent";
   http_status?: number;
 };
 
@@ -366,7 +365,7 @@ async function generateAttackerPrompt(
           .join("\n\n");
 
   const body = {
-    model: "llama-3.1-8b-instant",
+    model: "meta-llama/llama-3.1-8b-instant",
     messages: [
       { role: "system", content: systemInstruction },
       {
@@ -384,12 +383,14 @@ async function generateAttackerPrompt(
   let response: Response;
   try {
     response = await fetch(
-      "https://api.groq.com/openai/v1/chat/completions",
+      "https://openrouter.ai/api/v1/chat/completions",
       {
         method: "POST",
         headers: {
-          Authorization: `Bearer ${env.GROQ_API_KEY}`,
+          Authorization: `Bearer ${env.OPENROUTER_API_KEY}`,
           "Content-Type": "application/json",
+          "HTTP-Referer": "https://watchllm.dev",
+          "X-Title": "WatchLLM",
         },
         body: JSON.stringify(body),
       }
@@ -397,8 +398,8 @@ async function generateAttackerPrompt(
   } catch (err) {
     logWorkerError(
       {
-        stage: "groq_attacker_request",
-        provider: "groq",
+        stage: "openrouter_attacker_request",
+        provider: "openrouter",
         simulation_id: context.simulation_id,
         run_id: context.run_id,
         category,
@@ -410,12 +411,12 @@ async function generateAttackerPrompt(
 
   if (!response.ok) {
     const err = new Error(
-      `Groq attacker request failed with status ${response.status}`
+      `OpenRouter attacker request failed with status ${response.status}`
     );
     logWorkerError(
       {
-        stage: "groq_attacker_request",
-        provider: "groq",
+        stage: "openrouter_attacker_request",
+        provider: "openrouter",
         simulation_id: context.simulation_id,
         run_id: context.run_id,
         category,
@@ -424,7 +425,7 @@ async function generateAttackerPrompt(
       err
     );
     throw new Error(
-      `Groq attacker request failed with status ${response.status}`
+      `OpenRouter attacker request failed with status ${response.status}`
     );
   }
 
@@ -434,7 +435,7 @@ async function generateAttackerPrompt(
     data.choices?.[0]?.message?.[0]?.text;
 
   if (typeof content !== "string") {
-    throw new Error("Unexpected Groq response format");
+    throw new Error("Unexpected OpenRouter response format");
   }
 
   return content.trim();
@@ -572,7 +573,7 @@ async function judgeConversation(
   ].join("\n");
 
   const body = {
-    model: "claude-haiku-4-5-20251001",
+    model: "anthropic/claude-3.5-haiku",
     max_tokens: 512,
     messages: [
       {
@@ -584,20 +585,21 @@ async function judgeConversation(
 
   let response: Response;
   try {
-    response = await fetch("https://api.anthropic.com/v1/messages", {
+    response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "x-api-key": env.ANTHROPIC_API_KEY,
-        "anthropic-version": "2023-06-01",
+        Authorization: `Bearer ${env.OPENROUTER_API_KEY}`,
+        "HTTP-Referer": "https://watchllm.dev",
+        "X-Title": "WatchLLM",
       },
       body: JSON.stringify(body),
     });
   } catch (err) {
     logWorkerError(
       {
-        stage: "anthropic_judge_request",
-        provider: "anthropic",
+        stage: "openrouter_judge_request",
+        provider: "openrouter",
         simulation_id: context.simulation_id,
         run_id: context.run_id,
         category,
@@ -609,12 +611,12 @@ async function judgeConversation(
 
   if (!response.ok) {
     const err = new Error(
-      `Anthropic judge request failed with status ${response.status}`
+      `OpenRouter judge request failed with status ${response.status}`
     );
     logWorkerError(
       {
-        stage: "anthropic_judge_request",
-        provider: "anthropic",
+        stage: "openrouter_judge_request",
+        provider: "openrouter",
         simulation_id: context.simulation_id,
         run_id: context.run_id,
         category,
@@ -623,32 +625,23 @@ async function judgeConversation(
       err
     );
     throw new Error(
-      `Anthropic judge request failed with status ${response.status}`
+      `OpenRouter judge request failed with status ${response.status}`
     );
   }
 
   const data: any = await response.json();
-  const contentBlocks = data.content ?? [];
-  const textBlock = contentBlocks.find(
-    (block: any) => typeof block.text === "string" || block.type === "text"
-  );
-
-  const textContent: string | undefined =
-    typeof textBlock?.text === "string"
-      ? textBlock.text
-      : typeof textBlock?.content === "string"
-      ? textBlock.content
-      : undefined;
+  const contentBlocks = data.choices?.[0]?.message?.content ?? "";
+  const textContent = typeof contentBlocks === "string" ? contentBlocks : undefined;
 
   if (!textContent) {
-    throw new Error("Unexpected Anthropic response format");
+    throw new Error("Unexpected OpenRouter response format");
   }
 
   let parsed: any;
   try {
     parsed = JSON.parse(textContent);
   } catch {
-    throw new Error("Anthropic did not return valid JSON for judge output");
+    throw new Error("OpenRouter did not return valid JSON for judge output");
   }
 
   return {
@@ -684,7 +677,7 @@ async function generateSuggestedFix(
   ].join("\n");
 
   const body = {
-    model: "llama-3.1-8b-instant",
+    model: "meta-llama/llama-3.1-8b-instant",
     messages: [
       {
         role: "user",
@@ -696,19 +689,21 @@ async function generateSuggestedFix(
 
   let response: Response;
   try {
-    response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+    response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
       method: "POST",
       headers: {
-        Authorization: `Bearer ${env.GROQ_API_KEY}`,
+        Authorization: `Bearer ${env.OPENROUTER_API_KEY}`,
         "Content-Type": "application/json",
+        "HTTP-Referer": "https://watchllm.dev",
+        "X-Title": "WatchLLM",
       },
       body: JSON.stringify(body),
     });
   } catch (err) {
     logWorkerError(
       {
-        stage: "groq_suggested_fix_request",
-        provider: "groq",
+        stage: "openrouter_suggested_fix_request",
+        provider: "openrouter",
         simulation_id: context.simulation_id,
         run_id: context.run_id,
         category,
@@ -720,12 +715,12 @@ async function generateSuggestedFix(
 
   if (!response.ok) {
     const err = new Error(
-      `Groq suggested-fix request failed with status ${response.status}`
+      `OpenRouter suggested-fix request failed with status ${response.status}`
     );
     logWorkerError(
       {
-        stage: "groq_suggested_fix_request",
-        provider: "groq",
+        stage: "openrouter_suggested_fix_request",
+        provider: "openrouter",
         simulation_id: context.simulation_id,
         run_id: context.run_id,
         category,
@@ -739,7 +734,7 @@ async function generateSuggestedFix(
   const data: any = await response.json();
   const content = data.choices?.[0]?.message?.content;
   if (typeof content !== "string" || !content.trim()) {
-    throw new Error("Groq suggested-fix response was empty");
+    throw new Error("OpenRouter suggested-fix response was empty");
   }
 
   return content.trim();
