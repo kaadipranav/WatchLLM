@@ -229,7 +229,7 @@ export function SimulationProgressView({ simulationId }: Props) {
 
   return (
     <div style={wrapperStyle}>
-      <section style={backgroundStyle}>
+      <section className="bento-card plasma-border" style={backgroundStyle}>
         <div style={sectionTitleStyle}>Simulation Control</div>
         <div style={headlineStyle}>Simulation {simulationId}</div>
 
