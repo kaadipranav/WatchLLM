@@ -13,6 +13,7 @@ from uuid import UUID
 from uuid import uuid5, NAMESPACE_URL, uuid4
 
 from fastapi import BackgroundTasks, FastAPI, HTTPException, Request, status
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, ConfigDict, ValidationError
 import sentry_sdk
@@ -48,7 +49,28 @@ def _init_sentry() -> None:
 
 _init_sentry()
 
-app = FastAPI()
+ENVIRONMENT = os.getenv("ENVIRONMENT") or os.getenv("SENTRY_ENVIRONMENT", "production")
+
+app = FastAPI(
+    title="WatchLLM API",
+    docs_url="/docs" if ENVIRONMENT != "production" else None,
+    redoc_url="/redoc" if ENVIRONMENT != "production" else None,
+    openapi_url="/openapi.json" if ENVIRONMENT != "production" else None,
+)
+
+# CORS Security
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[
+        "https://watchllm.dev",
+        "https://www.watchllm.dev",
+        "http://localhost:3000",
+    ],
+    allow_credentials=True,
+    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allow_headers=["*"],
+)
+
 app.add_middleware(ClerkAuthMiddleware)
 
 
