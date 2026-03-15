@@ -1,4 +1,22 @@
 @import url("https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700&family=Geist+Mono:wght@400;500&family=Inter:opsz,wght@14..32,100..900&display=swap");
+
+/* Neue Haas Grotesk — local font attempt (bundled by some OS / design tools) */
+@font-face {
+  font-family: "Neue Haas Grotesk";
+  src: local("NeueHaasGroteskDisplay Pro"), local("Neue Haas Grotesk Display Pro"),
+       local("NHaasGroteskDSPro-55Rg"), local("Neue Haas Grotesk");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Neue Haas Grotesk";
+  src: local("NeueHaasGroteskDisplay Pro 65Md"), local("Neue Haas Grotesk Display Pro 65 Medium"),
+       local("NHaasGroteskDSPro-65Md"), local("Neue Haas Grotesk Medium");
+  font-weight: 500 700;
+  font-style: normal;
+  font-display: swap;
+}
 @import "tailwindcss";
 
 /* ============================================================
@@ -48,7 +66,7 @@
   --border-faint:  rgba(255, 255, 255, 0.06);
 
   /* --- Typography --- */
-  --font-sans: "Geist", "Neue Haas Grotesk", "Inter var", "Inter", system-ui, sans-serif;
+  --font-sans: "Neue Haas Grotesk", "Geist", "Inter var", "Inter", system-ui, sans-serif;
   --font-mono: "Geist Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
 
   /* --- Plasma glow values --- */

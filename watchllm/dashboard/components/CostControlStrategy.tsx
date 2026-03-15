@@ -48,7 +48,7 @@ export function CostControlStrategy({ estimatedRuns }: Props) {
   const estimatedCost = safeRuns * 0.02;
 
   return (
-    <section className="bento-card plasma-border" style={containerStyle}>
+    <section style={containerStyle}>
       <div style={titleStyle}>Cost Control Strategy</div>
       <div style={lineStyle}>
         Estimated runs: {safeRuns.toLocaleString("en-US")} | Estimated cost: ~$
