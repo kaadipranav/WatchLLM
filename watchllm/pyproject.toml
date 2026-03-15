@@ -20,4 +20,8 @@ dependencies = [
 [project.scripts]
 watchllm = "watchllm.cli.main:main"
 
+[tool.setuptools]
+py-modules = ["watchllm"]
+packages = ["api", "cli", "sdk"]
+
 
