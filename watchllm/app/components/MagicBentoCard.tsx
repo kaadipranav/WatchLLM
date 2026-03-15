@@ -33,7 +33,7 @@ type Props = {
   children: React.ReactNode;
   className?: string;
   style?: React.CSSProperties;
-  as?: keyof JSX.IntrinsicElements;
+  as?: any;
   /** Set false to skip the hover effect entirely */
   interactive?: boolean;
 };
