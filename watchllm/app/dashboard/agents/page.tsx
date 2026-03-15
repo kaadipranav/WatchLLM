@@ -1,29 +1,31 @@
+"use client";
+
+import { MagicBentoCard } from "../../components/MagicBentoCard";
+
 export default function AgentsPage() {
   return (
     <div style={{ padding: "2rem" }}>
       <h1
         style={{
           fontSize: "1.25rem",
-          fontWeight: 600,
-          letterSpacing: "-0.02em",
+          fontWeight: 650,
+          letterSpacing: "-0.025em",
           marginBottom: "1rem",
-          /* Cyber-Plasma Liquid Void: neon heading */
-          textShadow: "0 0 8px rgba(0, 240, 255, 0.3)",
+          color: "var(--text-primary)",
         }}
       >
         Agents
       </h1>
-      <div
-        className="glass-panel plasma-border"
+      <MagicBentoCard
         style={{
-          padding: "2rem",
-          fontFamily: 'var(--font-mono, monospace)',
+          padding: "2.5rem",
+          fontFamily: "var(--font-mono, monospace)",
           fontSize: "0.85rem",
-          color: "rgba(255,255,255,0.45)",
+          color: "var(--text-secondary)",
         }}
       >
         Connected agents will appear here once configured.
-      </div>
+      </MagicBentoCard>
     </div>
   );
 }

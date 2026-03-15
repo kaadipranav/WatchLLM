@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { ClipboardCopy, Check } from "lucide-react";
+import { MagicBentoCard } from "../components/MagicBentoCard";
 import { SimulationProgressView } from "../../dashboard/components/SimulationProgressView";
 import { CostControlStrategy } from "../../dashboard/components/CostControlStrategy";
 
@@ -16,30 +17,27 @@ type SimulationSummary = {
 
 const CLI_COMMAND = "watchllm attack --agent your-agent.py";
 
-const STATUS_BORDER: Record<string, string> = {
-  running:  "#00F0FF",
-  failed:   "#FF2A8C",
-  passed:   "#6E00FF",
-  complete: "#6E00FF",
+const STATUS_COLOR: Record<string, string> = {
+  running:  "var(--accent)",
+  failed:   "var(--danger)",
+  passed:   "var(--success)",
+  complete: "var(--success)",
 };
 
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-// Page title block (shared between empty + populated states)
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ──────────────────────────────────────────────────────
+// Page header
+// ──────────────────────────────────────────────────────
 function PageHeader({ count }: { count: number }) {
   return (
     <div style={{ marginBottom: "28px" }}>
       <h1
         style={{
           fontFamily: "var(--font-sans)",
-          fontSize: "22px",
-          // Premium Grotesk upgrade for fancy corporate feel
-          fontWeight: 640,
-          letterSpacing: "-0.02em",
-          color: "#ffffff",
+          fontSize: "24px",
+          fontWeight: 650,
+          letterSpacing: "-0.03em",
+          color: "var(--text-primary)",
           marginBottom: "6px",
-          /* Cyber-Plasma Liquid Void: neon heading glow */
-          textShadow: "0 0 8px rgba(0, 240, 255, 0.3)",
         }}
       >
         Simulations
@@ -48,23 +46,24 @@ function PageHeader({ count }: { count: number }) {
         style={{
           fontFamily: "var(--font-mono)",
           fontSize: "11px",
-          color: "#444",
-          letterSpacing: "0.05em",
+          color: "var(--text-muted)",
+          letterSpacing: "0.04em",
         }}
       >
-        {count > 0 ? `${count} simulation${count !== 1 ? "s" : ""} Â· select to inspect` : "no active simulations"}
+        {count > 0
+          ? `${count} simulation${count !== 1 ? "s" : ""} · select to inspect`
+          : "no active simulations"}
       </p>
     </div>
   );
 }
 
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ──────────────────────────────────────────────────────
 // CLI command copy pill
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ──────────────────────────────────────────────────────
 function CopyPill() {
   const [copied, setCopied] = useState(false);
-  const [pillHover, setPillHover] = useState(false);
-  const [iconHover, setIconHover] = useState(false);
+  const [hover, setHover] = useState(false);
 
   const handleCopy = async () => {
     try {
@@ -82,31 +81,30 @@ function CopyPill() {
         display: "inline-flex",
         alignItems: "center",
         gap: "10px",
-        background: pillHover ? "rgba(255,255,255,0.10)" : "rgba(255,255,255,0.08)",
-        border: "1px solid rgba(0, 240, 255, 0.15)",
-        padding: "6px 14px",
+        background: hover
+          ? "rgba(255,255,255,0.06)"
+          : "rgba(255,255,255,0.04)",
+        border: "1px solid var(--border-subtle)",
+        borderRadius: "var(--radius-sm)",
+        padding: "8px 14px",
         cursor: "default",
         transition: "background 150ms ease",
       }}
-      onMouseEnter={() => setPillHover(true)}
-      onMouseLeave={() => setPillHover(false)}
+      onMouseEnter={() => setHover(true)}
+      onMouseLeave={() => setHover(false)}
     >
       <code
         style={{
           fontFamily: "var(--font-mono)",
           fontSize: "12px",
-          color: "#00F0FF",
+          color: "var(--accent)",
           userSelect: "all",
-          /* Cyber-Plasma Liquid Void: neon code glow */
-          textShadow: "0 0 6px rgba(0, 240, 255, 0.3)",
         }}
       >
         {CLI_COMMAND}
       </code>
       <button
         onClick={handleCopy}
-        onMouseEnter={() => setIconHover(true)}
-        onMouseLeave={() => setIconHover(false)}
         aria-label="Copy command"
         style={{
           background: "none",
@@ -115,28 +113,26 @@ function CopyPill() {
           cursor: "pointer",
           display: "flex",
           alignItems: "center",
-          // Premium Grotesk upgrade for fancy corporate feel
-          fontFamily: "var(--font-sans)",
-          color: copied ? "#00F0FF" : iconHover ? "#00F0FF" : "#444",
+          color: copied ? "var(--accent)" : "var(--text-muted)",
           transition: "color 150ms ease",
         }}
       >
-        {copied
-          ? <Check size={13} strokeWidth={2} />
-          : <ClipboardCopy size={13} strokeWidth={2} />
-        }
+        {copied ? (
+          <Check size={13} strokeWidth={2} />
+        ) : (
+          <ClipboardCopy size={13} strokeWidth={2} />
+        )}
       </button>
     </div>
   );
 }
 
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-// Empty state card
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ──────────────────────────────────────────────────────
+// Empty state
+// ──────────────────────────────────────────────────────
 function EmptyState() {
   return (
-    <div
-      className="bento-card plasma-border"
+    <MagicBentoCard
       style={{
         padding: "60px 2rem",
         display: "flex",
@@ -151,7 +147,7 @@ function EmptyState() {
         style={{
           fontFamily: "var(--font-sans)",
           fontSize: "14px",
-          color: "#555",
+          color: "var(--text-secondary)",
           maxWidth: "360px",
           lineHeight: 1.6,
         }}
@@ -159,13 +155,13 @@ function EmptyState() {
         No simulations found. Launch your first chaos test from the CLI.
       </p>
       <CopyPill />
-    </div>
+    </MagicBentoCard>
   );
 }
 
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-// Simulation row card (for future populated state)
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ──────────────────────────────────────────────────────
+// Simulation row card
+// ──────────────────────────────────────────────────────
 function SimulationRow({
   sim,
   index,
@@ -178,7 +174,7 @@ function SimulationRow({
   onClick: () => void;
 }) {
   const [visible, setVisible] = useState(false);
-  const accentColor = STATUS_BORDER[sim.status] ?? "rgba(255,255,255,0.2)";
+  const accentColor = STATUS_COLOR[sim.status] ?? "var(--text-muted)";
 
   useEffect(() => {
     const t = setTimeout(() => setVisible(true), index * 40);
@@ -193,27 +189,29 @@ function SimulationRow({
         alignItems: "center",
         justifyContent: "space-between",
         width: "100%",
-        /* Cyber-Plasma Liquid Void: glass simulation row */
-        background: isActive ? "rgba(0, 240, 255, 0.06)" : "rgba(255,255,255,0.04)",
+        background: isActive
+          ? "rgba(140, 92, 245, 0.06)"
+          : "rgba(255,255,255,0.03)",
         border: "none",
         borderLeft: `2px solid ${accentColor}`,
-        borderRadius: "4px",
+        borderRadius: "6px",
         padding: "12px 16px",
         cursor: "pointer",
         textAlign: "left",
         opacity: visible ? 1 : 0,
         transform: visible ? "translateY(0)" : "translateY(8px)",
-        transition: "opacity 200ms ease, transform 200ms ease, background 150ms ease",
-        backdropFilter: "blur(12px)",
-        WebkitBackdropFilter: "blur(12px)",
+        transition:
+          "opacity 200ms ease, transform 200ms ease, background 150ms ease",
       }}
     >
-      <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+      <div
+        style={{ display: "flex", flexDirection: "column", gap: "4px" }}
+      >
         <span
           style={{
             fontFamily: "var(--font-mono)",
             fontSize: "12px",
-            color: "#ffffff",
+            color: "var(--text-primary)",
             letterSpacing: "0.02em",
           }}
         >
@@ -223,10 +221,14 @@ function SimulationRow({
           style={{
             fontFamily: "var(--font-mono)",
             fontSize: "10px",
-            color: "#444",
+            color: "var(--text-muted)",
           }}
         >
-          {new Date(sim.created_at).toISOString().slice(0, 19).replace("T", " ")} · {sim.total_runs} runs
+          {new Date(sim.created_at)
+            .toISOString()
+            .slice(0, 19)
+            .replace("T", " ")}{" "}
+          · {sim.total_runs} runs
         </span>
       </div>
       <span
@@ -244,9 +246,9 @@ function SimulationRow({
   );
 }
 
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ──────────────────────────────────────────────────────
 // Page
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ──────────────────────────────────────────────────────
 export default function DashboardPage() {
   const [simulations, setSimulations] = useState<SimulationSummary[]>([]);
   const [activeId, setActiveId] = useState<string | null>(null);
@@ -279,16 +281,16 @@ export default function DashboardPage() {
           style={{
             fontFamily: "var(--font-mono)",
             fontSize: "11px",
-            color: "#333",
+            color: "var(--text-muted)",
           }}
         >
-          fetching simulationsâ€¦
+          fetching simulations…
         </p>
       </div>
     );
   }
 
-  // â”€â”€ Empty state â”€â”€
+  // ── Empty state ──
   if (!activeId) {
     return (
       <div style={{ padding: "2rem" }}>
@@ -298,13 +300,20 @@ export default function DashboardPage() {
     );
   }
 
-  // â”€â”€ Populated state â”€â”€
+  // ── Populated state ──
   return (
     <div style={{ padding: "2rem" }}>
       <PageHeader count={simulations.length} />
 
       {simulations.length > 1 && (
-        <div style={{ display: "flex", flexDirection: "column", gap: "6px", marginBottom: "24px" }}>
+        <div
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            gap: "6px",
+            marginBottom: "24px",
+          }}
+        >
           {simulations.map((sim, i) => (
             <SimulationRow
               key={sim.id}
@@ -320,10 +329,11 @@ export default function DashboardPage() {
       <div style={{ display: "grid", gap: "1.5rem" }}>
         <SimulationProgressView simulationId={activeId} />
         <CostControlStrategy
-          estimatedRuns={simulations.find((s) => s.id === activeId)?.total_runs ?? 0}
+          estimatedRuns={
+            simulations.find((s) => s.id === activeId)?.total_runs ?? 0
+          }
         />
       </div>
     </div>
   );
 }
-

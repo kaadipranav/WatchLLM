@@ -50,41 +50,42 @@ type Props = {
   simulationId: string;
 };
 
-const backgroundStyle: React.CSSProperties = {
-  color: "#ffffff",
-  padding: "24px",
-  fontFamily: 'var(--font-mono, "JetBrains Mono", ui-monospace, monospace)',
-};
-
 const sectionTitleStyle: React.CSSProperties = {
-  fontSize: "0.75rem",
+  fontSize: "0.7rem",
   textTransform: "uppercase",
   letterSpacing: "0.1em",
-  color: "rgba(255,255,255,0.45)",
+  color: "var(--text-muted)",
   marginBottom: "0.5rem",
+  fontFamily: "var(--font-mono)",
 };
 
 const headlineStyle: React.CSSProperties = {
-  fontSize: "1.1rem",
+  fontSize: "1.05rem",
   fontWeight: 600,
+  fontFamily: "var(--font-sans)",
   marginBottom: "1rem",
+  color: "var(--text-primary)",
+  letterSpacing: "-0.02em",
 };
 
 const gridStyle: React.CSSProperties = {
   display: "grid",
   gridTemplateColumns: "repeat(3, minmax(0, 1fr))",
   gap: "1rem",
-  marginBottom: "1.25rem",
+  marginBottom: "1.5rem",
 };
 
 const labelStyle: React.CSSProperties = {
-  fontSize: "0.8rem",
-  color: "rgba(255,255,255,0.45)",
+  fontSize: "0.75rem",
+  color: "var(--text-muted)",
   marginBottom: "0.25rem",
+  fontFamily: "var(--font-mono)",
 };
 
 const valueStyle: React.CSSProperties = {
   fontSize: "1rem",
+  fontFamily: "var(--font-sans)",
+  fontWeight: 550,
 };
 
 const ATTACK_CATEGORIES = [
@@ -97,17 +98,19 @@ const ATTACK_CATEGORIES = [
 ];
 
 function severityColor(severity: number | null | undefined): string {
-  if (severity == null) return "rgba(255,255,255,0.3)";
-  if (severity <= 2) return "rgba(255,255,255,0.45)";
-  if (severity === 3) return "#FFCC00";
-  return "#FF2A8C"; // Cyber-Plasma Liquid Void: hot magenta for failure
+  if (severity == null) return "var(--text-muted)";
+  if (severity <= 2) return "var(--text-secondary)";
+  if (severity === 3) return "var(--warning)";
+  return "var(--danger)";
 }
 
 export function SimulationProgressView({ simulationId }: Props) {
   const [simulation, setSimulation] = useState<SimulationRow | null>(null);
   const [failures, setFailures] = useState<FailureSummary[]>([]);
   const [selectedRunId, setSelectedRunId] = useState<string | null>(null);
-  const [categoryReport, setCategoryReport] = useState<Record<string, CategoryReportRow>>({});
+  const [categoryReport, setCategoryReport] = useState<
+    Record<string, CategoryReportRow>
+  >({});
 
   useEffect(() => {
     const channel = supabase
@@ -161,15 +164,13 @@ export function SimulationProgressView({ simulationId }: Props) {
 
     const fetchCategoryReport = async () => {
       try {
-        const response = await fetch(`/api/simulation/${simulationId}/report`);
-        if (!response.ok) {
-          return;
-        }
+        const response = await fetch(
+          `/api/simulation/${simulationId}/report`
+        );
+        if (!response.ok) return;
 
         const payload = (await response.json()) as SummaryReport;
-        if (!active || !payload || typeof payload !== "object") {
-          return;
-        }
+        if (!active || !payload || typeof payload !== "object") return;
 
         const categories = payload.categories ?? {};
         const normalized: Record<string, CategoryReportRow> = {};
@@ -178,12 +179,13 @@ export function SimulationProgressView({ simulationId }: Props) {
           normalized[category] = {
             runs: typeof row?.runs === "number" ? row.runs : 0,
             failures: typeof row?.failures === "number" ? row.failures : 0,
-            avg_severity: typeof row?.avg_severity === "number" ? row.avg_severity : 0,
+            avg_severity:
+              typeof row?.avg_severity === "number" ? row.avg_severity : 0,
           };
         }
         setCategoryReport(normalized);
       } catch {
-        // Report fetch is best-effort while simulation is in flight.
+        // best-effort
       }
     };
 
@@ -199,56 +201,73 @@ export function SimulationProgressView({ simulationId }: Props) {
     simulation?.config?.num_runs ?? simulation?.total_runs ?? 0;
   const completedRuns = simulation?.total_runs ?? 0;
   const progress =
-    totalRuns > 0 ? Math.min(100, Math.round((completedRuns / totalRuns) * 100)) : 0;
+    totalRuns > 0
+      ? Math.min(100, Math.round((completedRuns / totalRuns) * 100))
+      : 0;
 
   const severityScore = simulation?.severity_score ?? null;
-  const severityStyle: React.CSSProperties = {
-    ...valueStyle,
-    color: severityColor(severityScore),
-  };
-
-  const progressBarTrack: React.CSSProperties = {
-    width: "100%",
-    height: "0.5rem",
-    borderRadius: "999px",
-    backgroundColor: "rgba(255,255,255,0.08)",
-    overflow: "hidden",
-  };
-
-  const progressBarFill: React.CSSProperties = {
-    width: `${progress}%`,
-    height: "100%",
-    backgroundColor: "rgba(255,255,255,0.2)", // neutral; severity colors are reserved
-    transition: "width 150ms ease-out",
-  };
-
-  const wrapperStyle: React.CSSProperties = {
-    display: "grid",
-    gap: "1rem",
-  };
 
   return (
-    <div style={wrapperStyle}>
-      <section className="bento-card plasma-border" style={backgroundStyle}>
+    <div style={{ display: "grid", gap: "1rem" }}>
+      <section
+        className="magic-bento"
+        style={{
+          color: "var(--text-primary)",
+          padding: "24px",
+          position: "relative",
+          overflow: "hidden",
+          "--glow-x": "50%",
+          "--glow-y": "50%",
+          "--glow-intensity": "0",
+          "--glow-radius": "350px",
+          "--glow-color": "140, 100, 255",
+        } as React.CSSProperties}
+      >
         <div style={sectionTitleStyle}>Simulation Control</div>
         <div style={headlineStyle}>Simulation {simulationId}</div>
 
         <div style={gridStyle}>
           <div>
             <div style={labelStyle}>Status</div>
-            <div style={valueStyle}>{simulation?.status ?? "queued"}</div>
+            <div style={valueStyle}>
+              {simulation?.status ?? "queued"}
+            </div>
           </div>
           <div>
             <div style={labelStyle}>Progress</div>
             <div style={valueStyle}>{progress}%</div>
-            <div style={progressBarTrack}>
-              <div style={progressBarFill} />
+            <div
+              style={{
+                width: "100%",
+                height: "4px",
+                borderRadius: "999px",
+                backgroundColor: "rgba(255,255,255,0.06)",
+                overflow: "hidden",
+                marginTop: "6px",
+              }}
+            >
+              <div
+                style={{
+                  width: `${progress}%`,
+                  height: "100%",
+                  background: "var(--accent)",
+                  borderRadius: "999px",
+                  transition: "width 200ms ease-out",
+                }}
+              />
             </div>
           </div>
           <div>
             <div style={labelStyle}>Agent Safety Score</div>
-            <div style={severityStyle}>
-              {severityScore != null ? severityScore.toFixed(2) : "—"}
+            <div
+              style={{
+                ...valueStyle,
+                color: severityColor(severityScore),
+              }}
+            >
+              {severityScore != null
+                ? severityScore.toFixed(2)
+                : "—"}
             </div>
           </div>
         </div>
@@ -256,10 +275,10 @@ export function SimulationProgressView({ simulationId }: Props) {
         <div style={sectionTitleStyle}>Attack Category Matrix</div>
         <div
           style={{
-            borderRadius: "0.5rem",
-            border: "1px solid rgba(255,255,255,0.08)",
+            borderRadius: "var(--radius-sm)",
+            border: "1px solid var(--border-subtle)",
             overflow: "hidden",
-            marginBottom: "1.25rem",
+            marginBottom: "1.5rem",
           }}
         >
           {ATTACK_CATEGORIES.map((category) => {
@@ -269,16 +288,22 @@ export function SimulationProgressView({ simulationId }: Props) {
               avg_severity: 0,
             };
 
-            const failureRate = row.runs > 0 ? Math.min(100, Math.round((row.failures / row.runs) * 100)) : 0;
+            const failureRate =
+              row.runs > 0
+                ? Math.min(
+                    100,
+                    Math.round((row.failures / row.runs) * 100)
+                  )
+                : 0;
             const barColor = severityColor(row.avg_severity);
 
             return (
               <div
                 key={category}
                 style={{
-                  borderBottom: "1px solid rgba(255,255,255,0.08)",
+                  borderBottom: "1px solid var(--border-faint)",
                   padding: "0.6rem 0.75rem",
-                  backgroundColor: "rgba(10, 10, 10, 0.6)",
+                  backgroundColor: "rgba(255,255,255,0.02)",
                 }}
               >
                 <div
@@ -286,22 +311,31 @@ export function SimulationProgressView({ simulationId }: Props) {
                     display: "grid",
                     gridTemplateColumns: "1.2fr 0.7fr 0.7fr 0.7fr",
                     gap: "0.5rem",
-                    fontSize: "0.8rem",
+                    fontSize: "0.78rem",
                     alignItems: "center",
                     marginBottom: "0.4rem",
+                    fontFamily: "var(--font-mono)",
                   }}
                 >
-                  <span>{category}</span>
-                  <span style={{ color: "rgba(255,255,255,0.3)" }}>runs: {row.runs}</span>
-                  <span style={{ color: "rgba(255,255,255,0.3)" }}>fail: {row.failures}</span>
-                  <span style={{ color: barColor }}>avg: {row.avg_severity.toFixed(2)}</span>
+                  <span style={{ color: "var(--text-primary)" }}>
+                    {category}
+                  </span>
+                  <span style={{ color: "var(--text-muted)" }}>
+                    runs: {row.runs}
+                  </span>
+                  <span style={{ color: "var(--text-muted)" }}>
+                    fail: {row.failures}
+                  </span>
+                  <span style={{ color: barColor }}>
+                    avg: {row.avg_severity.toFixed(2)}
+                  </span>
                 </div>
                 <div
                   style={{
                     width: "100%",
-                    height: "0.35rem",
+                    height: "3px",
                     borderRadius: "999px",
-                    backgroundColor: "rgba(255,255,255,0.08)",
+                    backgroundColor: "rgba(255,255,255,0.05)",
                     overflow: "hidden",
                   }}
                 >
@@ -310,7 +344,8 @@ export function SimulationProgressView({ simulationId }: Props) {
                       width: `${failureRate}%`,
                       height: "100%",
                       backgroundColor: barColor,
-                      transition: "width 150ms ease-out",
+                      borderRadius: "999px",
+                      transition: "width 200ms ease-out",
                     }}
                   />
                 </div>
@@ -324,14 +359,20 @@ export function SimulationProgressView({ simulationId }: Props) {
           style={{
             maxHeight: "12rem",
             overflowY: "auto",
-            borderRadius: "0.5rem",
-            border: "1px solid rgba(255,255,255,0.08)",
+            borderRadius: "var(--radius-sm)",
+            border: "1px solid var(--border-subtle)",
             padding: "0.75rem",
-            backgroundColor: "rgba(10, 10, 10, 0.6)",
+            backgroundColor: "rgba(255,255,255,0.02)",
           }}
         >
           {failures.length === 0 ? (
-            <div style={{ fontSize: "0.85rem", color: "rgba(255,255,255,0.3)" }}>
+            <div
+              style={{
+                fontSize: "0.85rem",
+                color: "var(--text-muted)",
+                fontFamily: "var(--font-mono)",
+              }}
+            >
               Waiting for first failure signal…
             </div>
           ) : (
@@ -347,10 +388,12 @@ export function SimulationProgressView({ simulationId }: Props) {
                     textAlign: "left",
                     padding: "0.5rem 0.75rem",
                     marginBottom: "0.5rem",
-                    borderRadius: "0.5rem",
+                    borderRadius: "var(--radius-sm)",
                     border: `1px solid ${severityColor(failure.severity)}`,
-                    backgroundColor: isSelected ? "rgba(0, 240, 255, 0.08)" : "rgba(10, 10, 10, 0.6)",
-                    color: "#ffffff",
+                    backgroundColor: isSelected
+                      ? "rgba(140, 92, 245, 0.06)"
+                      : "rgba(255,255,255,0.02)",
+                    color: "var(--text-primary)",
                     cursor: "pointer",
                   }}
                 >
@@ -361,6 +404,7 @@ export function SimulationProgressView({ simulationId }: Props) {
                       alignItems: "center",
                       marginBottom: "0.25rem",
                       fontSize: "0.85rem",
+                      fontFamily: "var(--font-mono)",
                     }}
                   >
                     <span>{failure.category}</span>
@@ -376,9 +420,10 @@ export function SimulationProgressView({ simulationId }: Props) {
                   {failure.explanation && (
                     <div
                       style={{
-                        fontSize: "0.8rem",
-                        color: "rgba(255,255,255,0.3)",
+                        fontSize: "0.78rem",
+                        color: "var(--text-muted)",
                         whiteSpace: "pre-wrap",
+                        fontFamily: "var(--font-mono)",
                       }}
                     >
                       {failure.explanation}
@@ -394,8 +439,9 @@ export function SimulationProgressView({ simulationId }: Props) {
           <div
             style={{
               marginTop: "0.75rem",
-              fontSize: "0.75rem",
-              color: "rgba(255,255,255,0.3)",
+              fontSize: "0.7rem",
+              color: "var(--text-muted)",
+              fontFamily: "var(--font-mono)",
             }}
           >
             Selected run: {selectedRunId}
@@ -404,9 +450,11 @@ export function SimulationProgressView({ simulationId }: Props) {
       </section>
 
       {selectedRunId && (
-        <FailureReplayViewer simulationId={simulationId} runId={selectedRunId} />
+        <FailureReplayViewer
+          simulationId={simulationId}
+          runId={selectedRunId}
+        />
       )}
     </div>
   );
 }
-

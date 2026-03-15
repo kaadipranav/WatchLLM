@@ -36,29 +36,27 @@ export function Sidebar() {
           display: "flex",
           alignItems: "center",
           position: "relative",
-          paddingTop: "8px",
-          paddingBottom: "8px",
-          paddingRight: "16px",
-          paddingLeft: "16px",
+          padding: "9px 16px",
           fontSize: "13px",
           fontFamily: "var(--font-sans)",
-          fontWeight: 400,
-          color: isActive ? "#ffffff" : isHovered ? "#cccccc" : "#555555",
-          /* Cyber-Plasma Liquid Void: glass sidebar item backgrounds */
-          background: isActive
-            ? "rgba(0, 240, 255, 0.08)"
+          fontWeight: isActive ? 500 : 400,
+          color: isActive
+            ? "#ffffff"
             : isHovered
-            ? "rgba(255,255,255,0.04)"
+            ? "rgba(255,255,255,0.7)"
+            : "rgba(255,255,255,0.35)",
+          background: isActive
+            ? "rgba(140, 92, 245, 0.08)"
+            : isHovered
+            ? "rgba(255,255,255,0.03)"
             : "transparent",
           textDecoration: "none",
-          letterSpacing: "0",
+          letterSpacing: "-0.01em",
           cursor: "pointer",
           transition: "color 150ms ease, background 150ms ease",
-          /* Cyber-Plasma Liquid Void: neon glow on active */
-          textShadow: isActive ? "0 0 8px rgba(0, 240, 255, 0.4)" : "none",
         }}
       >
-        {/* Cyber-Plasma Liquid Void: plasma active indicator */}
+        {/* Active indicator */}
         <span
           style={{
             position: "absolute",
@@ -66,11 +64,11 @@ export function Sidebar() {
             top: 0,
             bottom: 0,
             width: "2px",
-            background: "linear-gradient(180deg, #00F0FF, #6E00FF)",
+            background: "var(--accent)",
             transformOrigin: "bottom",
             transform: isActive ? "scaleY(1)" : "scaleY(0)",
             transition: "transform 150ms ease",
-            boxShadow: isActive ? "0 0 8px rgba(0, 240, 255, 0.5)" : "none",
+            borderRadius: "0 2px 2px 0",
           }}
         />
         {item.label}
@@ -102,15 +100,14 @@ export function Sidebar() {
           textDecoration: "none",
         }}
       >
-        {/* Cyber-Plasma Liquid Void: plasma vertical bar */}
         <span
           style={{
             display: "inline-block",
-            width: "2px",
-            height: "12px",
-            background: "linear-gradient(180deg, #00F0FF, #6E00FF)",
+            width: "3px",
+            height: "14px",
+            background: "var(--accent)",
+            borderRadius: "2px",
             flexShrink: 0,
-            boxShadow: "0 0 6px rgba(0, 240, 255, 0.5)",
           }}
         />
         <span
@@ -118,10 +115,9 @@ export function Sidebar() {
             fontFamily: "var(--font-sans)",
             fontWeight: 700,
             fontSize: "12px",
-            letterSpacing: "0.15em",
+            letterSpacing: "0.12em",
             color: "#ffffff",
             textTransform: "uppercase",
-            textShadow: "0 0 8px rgba(0, 240, 255, 0.3)",
           }}
         >
           WatchLLM
@@ -137,14 +133,20 @@ export function Sidebar() {
       <div
         style={{
           height: "1px",
-          /* Cyber-Plasma Liquid Void: subtle plasma divider */
-          background: "linear-gradient(90deg, transparent, rgba(0, 240, 255, 0.15), rgba(110, 0, 255, 0.1), transparent)",
+          background:
+            "linear-gradient(90deg, transparent, rgba(255,255,255,0.06), transparent)",
           margin: "8px 0",
         }}
       />
 
-      {/* Secondary nav (Settings) */}
-      <nav style={{ display: "flex", flexDirection: "column", marginBottom: "20px" }}>
+      {/* Secondary nav */}
+      <nav
+        style={{
+          display: "flex",
+          flexDirection: "column",
+          marginBottom: "20px",
+        }}
+      >
         {BOTTOM_NAV.map(renderLink)}
       </nav>
 
@@ -168,7 +170,7 @@ export function Sidebar() {
           style={{
             fontFamily: "var(--font-mono)",
             fontSize: "11px",
-            color: "#333",
+            color: "rgba(255,255,255,0.2)",
           }}
         >
           account
