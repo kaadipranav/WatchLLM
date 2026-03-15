@@ -2,10 +2,11 @@ name = "watchllm-chaos-worker"
 main = "worker/orchestrator_worker.ts"
 compatibility_date = "2026-03-07"
 workers_dev = true
+account_id = "d0255b71fe37a28634ade31a8afb60d4"
 
 # Non-secret worker runtime vars.
 [vars]
-NEXT_PUBLIC_SUPABASE_URL = "https://your-project-ref.supabase.co"
+NEXT_PUBLIC_SUPABASE_URL = "https://iyhxlbpuyhfqpkpbtndq.supabase.co"
 
 # Cloudflare R2 binding used by worker/chaos_worker.ts as env.TRACES_BUCKET.
 [[r2_buckets]]
