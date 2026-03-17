@@ -1,4 +1,4 @@
-@import url("https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700;800;900&family=Geist+Mono:wght@400;500&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700;800;900&family=Geist+Mono:wght@400;500&family=Inter:wght@100;200;300;400;500;600;700;800;900&display=swap");
 @import "tailwindcss";
 
 /* ============================================================
@@ -44,7 +44,7 @@
   --border-faint:  rgba(255, 255, 255, 0.04);
 
   /* --- Typography --- */
-  --font-sans: "Geist", system-ui, -apple-system, sans-serif;
+  --font-sans: "Neue Haas Grotesk", "Geist", "Inter", system-ui, -apple-system, sans-serif;
   --font-mono: "Geist Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
 
   /* --- Radius --- */
