@@ -180,7 +180,7 @@ def chaos(
         registered = False
         agent_id: str | None = None
 
-        api_url = os.getenv("WATCHLLM_API_URL", "https://watchllm.io")
+        api_url = os.getenv("WATCHLLM_API_URL", "https://watchllm.dev")
 
         @wraps(func)
         def wrapper(*args: P.args, **kwargs: P.kwargs) -> R:

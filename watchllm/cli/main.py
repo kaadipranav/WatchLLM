@@ -157,23 +157,27 @@ def run_simulation(
     categories: list[str],
     num_runs: int,
     max_turns: int,
+    agent_source: str | None = None,
 ) -> tuple[str, str, int]:
     headers = _build_auth_headers(api_key)
     with httpx.Client(timeout=30.0) as client:
         simulate_url = f"{api_base}/api/simulate"
+        body: dict[str, Any] = {
+            "sdk_key": sdk_key,
+            "config": {
+                "categories": categories,
+                "num_runs": num_runs,
+                "max_turns": max_turns,
+            },
+        }
+        if agent_source is not None:
+            body["agent_source"] = agent_source
         status_code, payload, response_headers = _request_json(
             client,
             "POST",
             simulate_url,
             headers=headers,
-            json_body={
-                "sdk_key": sdk_key,
-                "config": {
-                    "categories": categories,
-                    "num_runs": num_runs,
-                    "max_turns": max_turns,
-                },
-            },
+            json_body=body,
         )
 
         if status_code == 429:
@@ -221,9 +225,9 @@ def run_simulation(
                 last_progress = progress_value
 
             if terminal_status in {"completed", "failed", "cancelled"}:
-                report_url = f"{api_base}/api/simulation/{simulation_id}/report"
+                simulate_url = f"{api_base}/simulate/{simulation_id}"
                 print(f"Final status: {terminal_status}")
-                print(f"Report URL: {report_url}")
+                print(f"Dashboard URL: {simulate_url}")
                 return terminal_status, simulation_id, progress_value
 
             time.sleep(0.5)
@@ -240,6 +244,12 @@ def run_attack(target: str, api_base: str, api_key: str, sdk_key: str) -> int:
         raise FileNotFoundError(f"Agent file not found: {path}")
 
     print(f"Using target agent file: {path}")
+    try:
+        agent_source = path.read_text(encoding="utf-8", errors="replace")
+    except OSError as exc:
+        print(f"Warning: could not read agent file ({exc}). Sending without agent_source.", file=sys.stderr)
+        agent_source = None
+
     status, simulation_id, _progress = run_simulation(
         api_base=api_base,
         api_key=api_key,
@@ -247,6 +257,7 @@ def run_attack(target: str, api_base: str, api_key: str, sdk_key: str) -> int:
         categories=DEFAULT_CATEGORIES,
         num_runs=50,
         max_turns=5,
+        agent_source=agent_source,
     )
     if not simulation_id:
         return 5 if status in {"failed", "rate_limited"} else 0

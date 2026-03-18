@@ -46,6 +46,12 @@ class CreateApiKeyRequest(BaseModel):
     expires_in_days: int | None = Field(default=None, ge=1, le=3650)
 
 
+class CreateProjectRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    name: str = Field(min_length=1, max_length=80)
+
+
 class SimulationConfig(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
@@ -70,6 +76,7 @@ class SimulateRequest(BaseModel):
 
     sdk_key: str = Field(min_length=8, max_length=128, pattern=SDK_KEY_PATTERN)
     config: SimulationConfig = Field(default_factory=SimulationConfig)
+    agent_source: str | None = Field(default=None, max_length=500_000)
 
 
 class SimulationResponseRequest(BaseModel):

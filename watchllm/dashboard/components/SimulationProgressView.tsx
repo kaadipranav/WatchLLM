@@ -112,6 +112,51 @@ export function SimulationProgressView({ simulationId }: Props) {
     Record<string, CategoryReportRow>
   >({});
 
+  // ---------- initial data load (runs once on mount) ----------
+  useEffect(() => {
+    let cancelled = false;
+
+    const loadInitialState = async () => {
+      // Fetch the simulation row
+      const { data: simData } = await supabase
+        .from("simulations")
+        .select("id, status, severity_score, total_runs, failed_runs, config")
+        .eq("id", simulationId)
+        .limit(1)
+        .single();
+
+      if (!cancelled && simData) {
+        setSimulation(simData as SimulationRow);
+      }
+
+      // Fetch existing failed runs (up to 50, newest first)
+      const { data: runsData } = await supabase
+        .from("sim_runs")
+        .select("id, simulation_id, category, failed, severity, explanation")
+        .eq("simulation_id", simulationId)
+        .eq("failed", true)
+        .order("created_at", { ascending: false })
+        .limit(50);
+
+      if (!cancelled && Array.isArray(runsData) && runsData.length > 0) {
+        const loaded = runsData.map((r: SimRunRow) => ({
+          id: r.id,
+          category: r.category,
+          severity: r.severity,
+          explanation: r.explanation,
+        }));
+        setFailures(loaded);
+        setSelectedRunId(loaded[0]?.id ?? null);
+      }
+    };
+
+    loadInitialState();
+    return () => {
+      cancelled = true;
+    };
+  }, [simulationId]);
+
+  // ---------- realtime subscription (deduplicates against initial load) ----------
   useEffect(() => {
     const channel = supabase
       .channel(`simulation:${simulationId}`)
@@ -139,15 +184,19 @@ export function SimulationProgressView({ simulationId }: Props) {
         (payload) => {
           const record = payload.new as SimRunRow;
           if (record.failed) {
-            setFailures((current) => [
-              {
-                id: record.id,
-                category: record.category,
-                severity: record.severity,
-                explanation: record.explanation,
-              },
-              ...current,
-            ]);
+            setFailures((current) => {
+              // deduplicate: ignore if already loaded from initial fetch
+              if (current.some((f) => f.id === record.id)) return current;
+              return [
+                {
+                  id: record.id,
+                  category: record.category,
+                  severity: record.severity,
+                  explanation: record.explanation,
+                },
+                ...current,
+              ];
+            });
             setSelectedRunId((current) => current ?? record.id);
           }
         }
@@ -158,6 +207,7 @@ export function SimulationProgressView({ simulationId }: Props) {
       channel.unsubscribe();
     };
   }, [simulationId]);
+
 
   useEffect(() => {
     let active = true;

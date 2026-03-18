@@ -6,7 +6,6 @@ import { Renderer, Triangle, Program, Mesh } from "ogl";
 type PrismProps = {
   height?: number;
   baseWidth?: number;
-  animationType?: "rotate" | "hover" | "3drotate";
   glow?: number;
   offset?: { x?: number; y?: number };
   noise?: number;
@@ -21,7 +20,6 @@ type PrismProps = {
 const Prism: React.FC<PrismProps> = ({
   height = 3.5,
   baseWidth = 5.5,
-  animationType = "rotate",
   glow = 0.8,
   offset = { x: 0, y: 0 },
   noise = 0,
@@ -279,7 +277,6 @@ const Prism: React.FC<PrismProps> = ({
   }, [
     height,
     baseWidth,
-    animationType,
     glow,
     noise,
     offset?.x,

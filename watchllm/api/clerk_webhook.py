@@ -23,7 +23,7 @@ from sentry_sdk.integrations.fastapi import FastApiIntegration
 from svix.webhooks import Webhook, WebhookVerificationError
 
 from .auth import ClerkAuthMiddleware, hash_watchllm_api_key_secret
-from .schemas import CreateApiKeyRequest, RegisterAgentRequest, SimulateRequest, SimulationResponseRequest
+from .schemas import CreateApiKeyRequest, CreateProjectRequest, RegisterAgentRequest, SimulateRequest, SimulationResponseRequest
 
 
 def _safe_float(value: str | None, default: float) -> float:
@@ -732,9 +732,6 @@ def _r2_get_object_bytes(object_key: str, not_found_detail: str) -> bytes:
         ) from exc
 
 
-def not_implemented_response() -> dict[str, str]:
-    return {"status": "not_implemented"}
-
 
 @app.post("/api/webhooks/clerk")
 async def clerk_webhook(request: Request):
@@ -1108,6 +1105,9 @@ async def simulate(_payload: SimulateRequest, request: Request, background_tasks
                 "categories": _payload.config.categories,
                 "num_runs": _payload.config.num_runs,
                 "max_turns": _payload.config.max_turns,
+                **({
+                    "agent_source": _payload.agent_source
+                } if _payload.agent_source else {}),
             },
         },
         service_role_key,
@@ -1526,3 +1526,51 @@ async def current_user(request: Request):
         "user_id": getattr(request.state, "user_id", None),
     }
 
+
+@app.get("/api/simulations")
+async def list_simulations(request: Request):
+    """Return all simulations for the authenticated user, newest first."""
+    supabase_url, service_role_key = _get_supabase_admin_config()
+    user_id, _ = _resolve_authenticated_user(request, supabase_url, service_role_key)
+
+    user_id_filter = parse.quote(user_id, safe="")
+    endpoint = (
+        f"{supabase_url}/rest/v1/simulations"
+        f"?user_id=eq.{user_id_filter}"
+        f"&select=id,status,severity_score,total_runs,failed_runs,created_at,config"
+        f"&order=created_at.desc"
+    )
+    rows = _supabase_fetch_json(endpoint, service_role_key)
+    return rows if isinstance(rows, list) else []
+
+
+@app.post("/api/projects")
+async def create_project(_payload: CreateProjectRequest, request: Request):
+    """Create a new project for the authenticated user and return a one-time sdk_key."""
+    supabase_url, service_role_key = _get_supabase_admin_config()
+    user_id, _ = _resolve_authenticated_user(request, supabase_url, service_role_key)
+
+    # Generate a unique sk_proj_ key
+    alphabet = string.ascii_letters + string.digits
+    suffix = "".join(secrets.choice(alphabet) for _ in range(26))
+    sdk_key = f"sk_proj_{suffix}"
+    project_id = str(uuid4())
+
+    projects_endpoint = f"{supabase_url}/rest/v1/projects"
+    _supabase_request(
+        "POST",
+        projects_endpoint,
+        {
+            "id": project_id,
+            "user_id": user_id,
+            "name": _payload.name,
+            "sdk_key": sdk_key,
+        },
+        service_role_key,
+    )
+
+    return {
+        "project_id": project_id,
+        "name": _payload.name,
+        "sdk_key": sdk_key,
+    }
