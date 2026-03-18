@@ -39,7 +39,7 @@ Developers connect their agent via a one-line SDK decorator. WatchLLM fires thou
 Attacker LLM → Target Agent → Rule-Based Filter → LLM Judge
 ```
 
-**Attacker LLM**
+**Attacker LLM**  
 - Model: `llama-3.1-8b-instant` via Groq API (fast, cheap, never substitute with GPT-4o)
 - Knows the agent's purpose, system prompt, and registered tools
 - Generates targeted prompts per failure category
