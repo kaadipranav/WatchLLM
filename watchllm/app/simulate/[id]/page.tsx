@@ -1,11 +1,13 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useAuth } from "@clerk/nextjs";
 import { useParams, useRouter } from "next/navigation";
 import { SimulationProgressView } from "../../../dashboard/components/SimulationProgressView";
 import { Sidebar } from "../../dashboard/Sidebar";
 
 export default function SimulatePage() {
+  const { getToken } = useAuth();
   const params = useParams();
   const router = useRouter();
   const id = typeof params?.id === "string" ? params.id : null;
@@ -19,19 +21,26 @@ export default function SimulatePage() {
       return;
     }
 
-    // Verify the simulation exists and the user can access it
-    fetch(`/api/simulation/${id}/status`)
-      .then(async (res) => {
+    const checkStatus = async () => {
+      try {
+        const token = await getToken();
+        const res = await fetch(`/api/simulation/${id}/status`, {
+          headers: {
+            Authorization: `Bearer ${token}`
+          }
+        });
         if (res.status === 401 || res.status === 403 || res.status === 404) {
           setNotFound(true);
         }
-        setChecking(false);
-      })
-      .catch(() => {
+      } catch {
         setNotFound(true);
+      } finally {
         setChecking(false);
-      });
-  }, [id, router]);
+      }
+    };
+    
+    checkStatus();
+  }, [id, router, getToken]);
 
   // Redirect if not found or no id
   useEffect(() => {

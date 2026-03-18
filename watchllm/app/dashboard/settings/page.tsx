@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useAuth } from "@clerk/nextjs";
 import { MagicBentoCard } from "../../components/MagicBentoCard";
 
 type ApiKeyRow = {
@@ -15,6 +16,7 @@ type ApiKeyRow = {
 };
 
 export default function SettingsPage() {
+  const { getToken } = useAuth();
   const [keys, setKeys] = useState<ApiKeyRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [name, setName] = useState("CI Key");
@@ -34,7 +36,12 @@ export default function SettingsPage() {
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch("/api/keys");
+      const token = await getToken();
+      const res = await fetch("/api/keys", {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
       if (!res.ok) {
         const payload = await res.json().catch(() => ({}));
         throw new Error(payload?.detail || "Failed to load API keys");
@@ -61,9 +68,13 @@ export default function SettingsPage() {
       const parsedDays = Number(expiresInDays);
       const expiresValue = Number.isFinite(parsedDays) && parsedDays > 0 ? Math.round(parsedDays) : null;
 
+      const token = await getToken();
       const res = await fetch("/api/keys", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
         body: JSON.stringify({
           name,
           sdk_key: sdkKey,
@@ -92,7 +103,13 @@ export default function SettingsPage() {
     setBusy(true);
     setError(null);
     try {
-      const res = await fetch(`/api/keys/${id}`, { method: "DELETE" });
+      const token = await getToken();
+      const res = await fetch(`/api/keys/${id}`, {
+        method: "DELETE",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
       const payload = await res.json().catch(() => ({}));
       if (!res.ok) {
         throw new Error(payload?.detail || "Failed to revoke API key");
@@ -110,9 +127,13 @@ export default function SettingsPage() {
     setProjectError(null);
     setCreatedProject(null);
     try {
+      const token = await getToken();
       const res = await fetch("/api/projects", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
         body: JSON.stringify({ name: projectName.trim() }),
       });
       const payload = await res.json().catch(() => ({}));

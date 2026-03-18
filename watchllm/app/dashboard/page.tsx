@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useAuth } from "@clerk/nextjs";
 import { ClipboardCopy, Check } from "lucide-react";
 import { MagicBentoCard } from "../components/MagicBentoCard";
 import { SimulationProgressView } from "../../dashboard/components/SimulationProgressView";
@@ -260,6 +261,7 @@ function SimulationRow({
 // Page
 // ──────────────────────────────────────────────────────
 export default function DashboardPage() {
+  const { getToken } = useAuth();
   const [simulations, setSimulations] = useState<SimulationSummary[]>([]);
   const [activeId, setActiveId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
@@ -267,7 +269,12 @@ export default function DashboardPage() {
   useEffect(() => {
     const fetchSimulations = async () => {
       try {
-        const res = await fetch("/api/simulations");
+        const token = await getToken();
+        const res = await fetch("/api/simulations", {
+          headers: {
+            Authorization: `Bearer ${token}`
+          }
+        });
         if (res.ok) {
           const data: SimulationSummary[] = await res.json();
           setSimulations(data);
