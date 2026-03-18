@@ -29,30 +29,32 @@ const STATUS_COLOR: Record<string, string> = {
 // ──────────────────────────────────────────────────────
 function PageHeader({ count }: { count: number }) {
   return (
-    <div style={{ marginBottom: "28px" }}>
+    <div style={{ marginBottom: "40px", borderBottom: "1px solid #1a1a2e", paddingBottom: "20px" }}>
       <h1
         style={{
-          fontFamily: "var(--font-sans)",
-          fontSize: "24px",
-          fontWeight: 650,
-          letterSpacing: "-0.03em",
-          color: "var(--text-primary)",
-          marginBottom: "6px",
+          fontFamily: "'Anton',sans-serif",
+          fontSize: "42px",
+          fontWeight: 800,
+          letterSpacing: "0.02em",
+          color: "#ffffff",
+          marginBottom: "12px",
+          textTransform: "uppercase",
         }}
       >
-        Simulations
+        SIMULATIONS
       </h1>
       <p
         style={{
-          fontFamily: "var(--font-mono)",
-          fontSize: "11px",
-          color: "var(--text-muted)",
-          letterSpacing: "0.04em",
+          fontFamily: "'IBM Plex Mono',monospace",
+          fontSize: "12px",
+          color: "#4a4a6a",
+          letterSpacing: "0.08em",
+          textTransform: "uppercase",
         }}
       >
         {count > 0
-          ? `${count} simulation${count !== 1 ? "s" : ""} · select to inspect`
-          : "no active simulations"}
+          ? `${count} ACTIVE · SELECT TO INSPECT`
+          : "NO ACTIVE SIMULATIONS"}
       </p>
     </div>
   );
@@ -80,25 +82,26 @@ function CopyPill() {
       style={{
         display: "inline-flex",
         alignItems: "center",
-        gap: "10px",
+        gap: "12px",
         background: hover
-          ? "rgba(255,255,255,0.06)"
-          : "rgba(255,255,255,0.04)",
-        border: "1px solid var(--border-subtle)",
-        borderRadius: "var(--radius-sm)",
-        padding: "8px 14px",
+          ? "rgba(124,110,247,0.1)"
+          : "rgba(124,110,247,0.05)",
+        border: "1px solid rgba(124,110,247,0.3)",
+        borderRadius: "4px",
+        padding: "10px 16px",
         cursor: "default",
-        transition: "background 150ms ease",
+        transition: "all 200ms ease",
       }}
       onMouseEnter={() => setHover(true)}
       onMouseLeave={() => setHover(false)}
     >
       <code
         style={{
-          fontFamily: "var(--font-mono)",
-          fontSize: "12px",
-          color: "var(--accent)",
+          fontFamily: "'IBM Plex Mono',monospace",
+          fontSize: "11px",
+          color: "#a594ff",
           userSelect: "all",
+          letterSpacing: "0.05em",
         }}
       >
         {CLI_COMMAND}
@@ -113,7 +116,7 @@ function CopyPill() {
           cursor: "pointer",
           display: "flex",
           alignItems: "center",
-          color: copied ? "var(--accent)" : "var(--text-muted)",
+          color: copied ? "#39d98a" : "#7c6ef7",
           transition: "color 150ms ease",
         }}
       >
@@ -134,26 +137,31 @@ function EmptyState() {
   return (
     <MagicBentoCard
       style={{
-        padding: "60px 2rem",
+        padding: "80px 2rem",
         display: "flex",
         flexDirection: "column",
         alignItems: "center",
         justifyContent: "center",
-        gap: "20px",
+        gap: "28px",
         textAlign: "center",
+        background: "rgba(124,110,247,0.02)",
+        border: "1px solid rgba(124,110,247,0.1)",
       }}
     >
-      <p
-        style={{
-          fontFamily: "var(--font-sans)",
-          fontSize: "14px",
-          color: "var(--text-secondary)",
-          maxWidth: "360px",
-          lineHeight: 1.6,
-        }}
-      >
-        No simulations found. Launch your first chaos test from the CLI.
-      </p>
+      <div>
+        <p
+          style={{
+            fontFamily: "'IBM Plex Mono',monospace",
+            fontSize: "13px",
+            color: "#8a8a93",
+            maxWidth: "420px",
+            lineHeight: 1.7,
+            letterSpacing: "0.02em",
+          }}
+        >
+          No simulations found. Launch your first chaos test from the CLI.
+        </p>
+      </div>
       <CopyPill />
     </MagicBentoCard>
   );
@@ -190,12 +198,11 @@ function SimulationRow({
         justifyContent: "space-between",
         width: "100%",
         background: isActive
-          ? "rgba(140, 92, 245, 0.06)"
-          : "rgba(255,255,255,0.03)",
-        border: "none",
-        borderLeft: `2px solid ${accentColor}`,
-        borderRadius: "6px",
-        padding: "12px 16px",
+          ? "rgba(124,110,247,0.1)"
+          : "rgba(26,26,46,0.4)",
+        border: isActive ? "1px solid rgba(124,110,247,0.5)" : "1px solid #1a1a2e",
+        borderRadius: "4px",
+        padding: "14px 16px",
         cursor: "pointer",
         textAlign: "left",
         opacity: visible ? 1 : 0,
@@ -205,39 +212,42 @@ function SimulationRow({
       }}
     >
       <div
-        style={{ display: "flex", flexDirection: "column", gap: "4px" }}
+        style={{ display: "flex", flexDirection: "column", gap: "6px" }}
       >
         <span
           style={{
-            fontFamily: "var(--font-mono)",
+            fontFamily: "'IBM Plex Mono',monospace",
             fontSize: "12px",
-            color: "var(--text-primary)",
-            letterSpacing: "0.02em",
+            color: "#ffffff",
+            letterSpacing: "0.05em",
+            fontWeight: 500,
           }}
         >
           {sim.id.slice(0, 8)}
         </span>
         <span
           style={{
-            fontFamily: "var(--font-mono)",
+            fontFamily: "'IBM Plex Mono',monospace",
             fontSize: "10px",
-            color: "var(--text-muted)",
+            color: "#4a4a6a",
+            letterSpacing: "0.02em",
           }}
         >
           {new Date(sim.created_at)
             .toISOString()
             .slice(0, 19)
             .replace("T", " ")}{" "}
-          · {sim.total_runs} runs
+          · {sim.total_runs} RUNS
         </span>
       </div>
       <span
         style={{
-          fontFamily: "var(--font-mono)",
-          fontSize: "10px",
+          fontFamily: "'IBM Plex Mono',monospace",
+          fontSize: "11px",
           color: accentColor,
           textTransform: "uppercase",
-          letterSpacing: "0.08em",
+          letterSpacing: "0.1em",
+          fontWeight: 600,
         }}
       >
         {sim.status}
@@ -275,16 +285,18 @@ export default function DashboardPage() {
 
   if (loading) {
     return (
-      <div style={{ padding: "2rem" }}>
+      <div style={{ padding: "0" }}>
         <PageHeader count={0} />
         <p
           style={{
-            fontFamily: "var(--font-mono)",
-            fontSize: "11px",
-            color: "var(--text-muted)",
+            fontFamily: "'IBM Plex Mono',monospace",
+            fontSize: "12px",
+            color: "#4a4a6a",
+            letterSpacing: "0.08em",
+            textTransform: "uppercase",
           }}
         >
-          fetching simulations…
+          FETCHING SIMULATIONS…
         </p>
       </div>
     );
@@ -293,7 +305,7 @@ export default function DashboardPage() {
   // ── Empty state ──
   if (!activeId) {
     return (
-      <div style={{ padding: "2rem" }}>
+      <div style={{ padding: "0" }}>
         <PageHeader count={0} />
         <EmptyState />
       </div>
@@ -302,7 +314,7 @@ export default function DashboardPage() {
 
   // ── Populated state ──
   return (
-    <div style={{ padding: "2rem" }}>
+    <div style={{ padding: "0" }}>
       <PageHeader count={simulations.length} />
 
       {simulations.length > 1 && (
@@ -310,8 +322,8 @@ export default function DashboardPage() {
           style={{
             display: "flex",
             flexDirection: "column",
-            gap: "6px",
-            marginBottom: "24px",
+            gap: "8px",
+            marginBottom: "32px",
           }}
         >
           {simulations.map((sim, i) => (
@@ -326,7 +338,7 @@ export default function DashboardPage() {
         </div>
       )}
 
-      <div style={{ display: "grid", gap: "1.5rem" }}>
+      <div style={{ display: "grid", gap: "24px" }}>
         <SimulationProgressView simulationId={activeId} />
         <CostControlStrategy
           estimatedRuns={
