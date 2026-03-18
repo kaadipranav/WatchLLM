@@ -950,21 +950,23 @@ async def register_agent(_payload: RegisterAgentRequest, request: Request):
     supabase_url, service_role_key = _get_supabase_admin_config()
     user_id, _ = _resolve_authenticated_user(request, supabase_url, service_role_key)
 
-    sdk_key_filter = parse.quote(_payload.sdk_key, safe="")
+    expected_hash = hash_watchllm_api_key_secret(_payload.sdk_key)
     user_id_filter = parse.quote(user_id, safe="")
     projects_endpoint = (
         f"{supabase_url}/rest/v1/projects"
-        f"?sdk_key=eq.{sdk_key_filter}&user_id=eq.{user_id_filter}&select=id&limit=1"
+        f"?user_id=eq.{user_id_filter}&select=id,sdk_key"
     )
-    projects = _supabase_fetch_json(projects_endpoint, service_role_key)
-    if not isinstance(projects, list) or len(projects) == 0:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Project not found for sdk_key",
-        )
+    user_projects = _supabase_fetch_json(projects_endpoint, service_role_key)
 
-    project_id = projects[0].get("id")
-    if not isinstance(project_id, str) or not project_id:
+    project_id = None
+    if isinstance(user_projects, list):
+        for row in user_projects:
+            stored_hash = row.get("sdk_key")
+            if isinstance(stored_hash, str) and hmac.compare_digest(stored_hash, expected_hash):
+                project_id = row.get("id")
+                break
+
+    if not project_id:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Project not found for sdk_key",
@@ -1050,21 +1052,23 @@ async def simulate(_payload: SimulateRequest, request: Request, background_tasks
                 headers={"Retry-After": str(retry_after_seconds)},
             )
 
-    sdk_key_filter = parse.quote(_payload.sdk_key, safe="")
+    expected_hash = hash_watchllm_api_key_secret(_payload.sdk_key)
     user_id_filter = parse.quote(user_id, safe="")
     projects_endpoint = (
         f"{supabase_url}/rest/v1/projects"
-        f"?sdk_key=eq.{sdk_key_filter}&user_id=eq.{user_id_filter}&select=id&limit=1"
+        f"?user_id=eq.{user_id_filter}&select=id,sdk_key"
     )
-    projects = _supabase_fetch_json(projects_endpoint, service_role_key)
-    if not isinstance(projects, list) or len(projects) == 0:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Project not found for sdk_key",
-        )
+    user_projects = _supabase_fetch_json(projects_endpoint, service_role_key)
 
-    project_id = projects[0].get("id")
-    if not isinstance(project_id, str) or not project_id:
+    project_id = None
+    if isinstance(user_projects, list):
+        for row in user_projects:
+            stored_hash = row.get("sdk_key")
+            if isinstance(stored_hash, str) and hmac.compare_digest(stored_hash, expected_hash):
+                project_id = row.get("id")
+                break
+
+    if not project_id:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Project not found for sdk_key",
@@ -1564,7 +1568,7 @@ async def create_project(_payload: CreateProjectRequest, request: Request):
             "id": project_id,
             "user_id": user_id,
             "name": _payload.name,
-            "sdk_key": sdk_key,
+            "sdk_key": hash_watchllm_api_key_secret(sdk_key),
         },
         service_role_key,
     )
