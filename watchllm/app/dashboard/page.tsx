@@ -280,9 +280,12 @@ export default function DashboardPage() {
           setSimulations(data);
           const running = data.find((s) => s.status === "running");
           setActiveId(running ? running.id : data[0]?.id ?? null);
+        } else {
+          const payload = await res.json().catch(() => ({}));
+          console.error("DEBUG /api/simulations Failed", res.status, payload);
         }
-      } catch {
-        // best-effort
+      } catch (err) {
+        console.error("DEBUG fetchSimulations Error", err);
       } finally {
         setLoading(false);
       }

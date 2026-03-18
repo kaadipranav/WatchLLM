@@ -260,7 +260,7 @@ def verify_clerk_session_token(token: str) -> AuthContext:
             issuer=issuer,
         )
     except jwt.PyJWTError as exc:
-        raise AuthError("Invalid or expired Clerk session token") from exc
+        raise AuthError(f"Invalid or expired Clerk session token: {exc}") from exc
 
     user_id = verified_payload.get("sub")
     if not isinstance(user_id, str) or not user_id:

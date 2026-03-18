@@ -44,6 +44,7 @@ export default function SettingsPage() {
       });
       if (!res.ok) {
         const payload = await res.json().catch(() => ({}));
+        console.error("DEBUG /api/keys Failed", res.status, payload);
         throw new Error(payload?.detail || "Failed to load API keys");
       }
       const payload = await res.json();
@@ -138,6 +139,7 @@ export default function SettingsPage() {
       });
       const payload = await res.json().catch(() => ({}));
       if (!res.ok) {
+        console.error("DEBUG /api/projects Failed", res.status, payload);
         throw new Error(payload?.detail || "Failed to create project");
       }
       if (typeof payload?.sdk_key === "string") {
