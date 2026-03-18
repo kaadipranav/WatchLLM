@@ -36,41 +36,30 @@ export function Sidebar() {
           display: "flex",
           alignItems: "center",
           position: "relative",
-          padding: "9px 16px",
-          fontSize: "13px",
-          fontFamily: "var(--font-sans)",
-          fontWeight: isActive ? 500 : 400,
+          padding: "10px 14px",
+          fontSize: "12px",
+          fontFamily: "'IBM Plex Mono',monospace",
+          fontWeight: 500,
+          letterSpacing: "0.1em",
+          textTransform: "uppercase",
           color: isActive
             ? "#ffffff"
             : isHovered
-            ? "rgba(255,255,255,0.7)"
-            : "rgba(255,255,255,0.35)",
+            ? "rgba(255,255,255,0.6)"
+            : "rgba(255,255,255,0.4)",
           background: isActive
-            ? "rgba(140, 92, 245, 0.08)"
+            ? "rgba(26,26,46,0.8)"
             : isHovered
-            ? "rgba(255,255,255,0.03)"
+            ? "rgba(26,26,46,0.5)"
             : "transparent",
+          border: isActive ? "1px solid rgba(124,110,247,0.4)" : "1px solid transparent",
+          borderRadius: "4px",
           textDecoration: "none",
-          letterSpacing: "-0.01em",
           cursor: "pointer",
-          transition: "color 150ms ease, background 150ms ease",
+          transition: "all 150ms ease",
+          marginBottom: "4px",
         }}
       >
-        {/* Active indicator */}
-        <span
-          style={{
-            position: "absolute",
-            left: 0,
-            top: 0,
-            bottom: 0,
-            width: "2px",
-            background: "var(--accent)",
-            transformOrigin: "bottom",
-            transform: isActive ? "scaleY(1)" : "scaleY(0)",
-            transition: "transform 150ms ease",
-            borderRadius: "0 2px 2px 0",
-          }}
-        />
         {item.label}
       </Link>
     );
@@ -80,12 +69,14 @@ export function Sidebar() {
     <aside
       className="sidebar-glass"
       style={{
-        width: "200px",
+        width: "220px",
         minHeight: "100vh",
         display: "flex",
         flexDirection: "column",
-        padding: "24px 0",
+        padding: "24px 16px",
         flexShrink: 0,
+        background: "#0d0d1a",
+        borderRight: "1px solid #1a1a2e",
       }}
     >
       {/* Wordmark */}
@@ -94,38 +85,30 @@ export function Sidebar() {
         style={{
           display: "flex",
           alignItems: "center",
-          gap: "10px",
-          padding: "0 16px",
-          marginBottom: "32px",
+          gap: "8px",
+          padding: "12px 8px",
+          marginBottom: "28px",
           textDecoration: "none",
+          borderBottom: "1px solid #1a1a2e",
         }}
       >
         <span
           style={{
             display: "inline-block",
-            width: "3px",
-            height: "14px",
-            background: "var(--accent)",
-            borderRadius: "2px",
-            flexShrink: 0,
-          }}
-        />
-        <span
-          style={{
-            fontFamily: "var(--font-sans)",
-            fontWeight: 700,
-            fontSize: "12px",
-            letterSpacing: "0.12em",
-            color: "#ffffff",
+            fontFamily: "'Anton',sans-serif",
+            fontWeight: 800,
+            fontSize: "13px",
+            letterSpacing: "0.08em",
+            color: "#a594ff",
             textTransform: "uppercase",
           }}
         >
-          WatchLLM
+          ◆ WATCH
         </span>
       </Link>
 
       {/* Primary nav */}
-      <nav style={{ display: "flex", flexDirection: "column", flex: 1 }}>
+      <nav style={{ display: "flex", flexDirection: "column", flex: 1, paddingBottom: "16px" }}>
         {NAV_ITEMS.map(renderLink)}
       </nav>
 
@@ -133,9 +116,8 @@ export function Sidebar() {
       <div
         style={{
           height: "1px",
-          background:
-            "linear-gradient(90deg, transparent, rgba(255,255,255,0.06), transparent)",
-          margin: "8px 0",
+          background: "#1a1a2e",
+          margin: "12px 0",
         }}
       />
 
