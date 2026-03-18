@@ -264,7 +264,7 @@ footer{padding:2rem 3rem;border-top:1px solid var(--border);display:flex;align-i
   <div className="hero-left">
     <div className="tag"><div className="tag-dot"></div>Chaos monkey for AI agents</div>
     <h1 className="h1" style={{ fontSize: "clamp(3.5rem, 6.5vw, 6.2rem)", lineHeight: "1.05", marginBottom: "1.5rem" }}>
-      BREAK YOUR<br />AGENTS BEFORE<br /><span className="line-blue" style={{ position: "relative" }}>
+      BREAK YOUR<br />AGENTS BEFORE<br /><span className="line-blue" style={{ position: "relative", display: "inline-block", minWidth: "280px" }}>
         {typedWord}<span style={{ position: "absolute", right: "-15px", borderRight: "0.08em solid var(--blue)", animation: "blink 1s steps(1) infinite", height: "80%", top: "10%" }}></span>
       </span>
     </h1>
