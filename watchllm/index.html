@@ -1,0 +1,601 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WatchLLM - Chaos Monkey for AI Agents</title>
+    
+    <!-- Fonts: Syne for display, IBM Plex Mono for UI/Terminal -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:ital,wght@0,400;0,500;0,600;1,400&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
+    
+    <!-- Phosphor Icons -->
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+
+    <style>
+        :root {
+            --bg-color: #0c0c0e; /* Industrial deep charcoal, not pure black */
+            --surface-color: #161619;
+            --surface-border: #2a2a2f;
+            --accent-color: #ff3c00; /* Threat Red/Orange */
+            --accent-dim: rgba(255, 60, 0, 0.15);
+            --text-main: #f0f0f2;
+            --text-muted: #8a8a93;
+            --text-dark: #0c0c0e;
+            
+            --font-display: 'Syne', sans-serif;
+            --font-mono: 'IBM Plex Mono', monospace;
+            
+            --transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            background-color: transparent;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            font-family: var(--font-mono);
+            line-height: 1.6;
+            overflow-x: hidden;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        /* Utility */
+        .container {
+            max-width: 1280px;
+            margin: 0 auto;
+            padding: 0 2rem;
+        }
+
+        .reveal {
+            opacity: 0;
+            transform: translateY(20px);
+            transition: opacity 0.8s ease-out, transform 0.8s ease-out;
+        }
+
+        .reveal.active {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* Typography */
+        h1, h2, h3 {
+            font-family: var(--font-display);
+            text-transform: uppercase;
+            font-weight: 800;
+            line-height: 1.1;
+            letter-spacing: -0.02em;
+        }
+
+        h1 {
+            font-size: clamp(3rem, 6vw, 5.5rem);
+            margin-bottom: 1.5rem;
+        }
+
+        h2 {
+            font-size: clamp(2rem, 4vw, 3.5rem);
+            margin-bottom: 2rem;
+            color: var(--text-main);
+        }
+
+        p {
+            font-size: 1.125rem;
+            color: var(--text-muted);
+            margin-bottom: 2rem;
+            max-width: 600px;
+        }
+
+        /* Navbar */
+        nav {
+            padding: 2rem 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--surface-border);
+        }
+
+        .logo {
+            font-family: var(--font-display);
+            font-weight: 800;
+            font-size: 1.5rem;
+            letter-spacing: -0.05em;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .logo i {
+            color: var(--accent-color);
+            font-size: 1.75rem;
+        }
+
+        .nav-links a {
+            color: var(--text-muted);
+            text-decoration: none;
+            transition: var(--transition);
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .nav-links a:hover {
+            color: var(--text-main);
+        }
+
+        /* Buttons */
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 1rem 2rem;
+            font-family: var(--font-mono);
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            text-decoration: none;
+            border: 1px solid var(--accent-color);
+            color: var(--accent-color);
+            transition: var(--transition);
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background-color: var(--accent-color);
+            transition: var(--transition);
+            z-index: -1;
+        }
+
+        .btn:hover {
+            color: var(--text-dark);
+        }
+
+        .btn:hover::before {
+            left: 0;
+        }
+
+        /* Hero Section */
+        .hero {
+            padding: 8rem 0;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 4rem;
+            align-items: center;
+            min-height: 80vh;
+        }
+
+        .hero-content .tag {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            background: var(--accent-dim);
+            color: var(--accent-color);
+            border: 1px solid var(--accent-color);
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            margin-bottom: 2rem;
+            letter-spacing: 0.1em;
+        }
+
+        /* Terminal Widget */
+        .terminal {
+            background: var(--surface-color);
+            border: 1px solid var(--surface-border);
+            border-radius: 4px;
+            overflow: hidden;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.5);
+            position: relative;
+        }
+
+        .terminal-header {
+            background: #1e1e24;
+            padding: 0.75rem 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            border-bottom: 1px solid var(--surface-border);
+        }
+
+        .terminal-header .dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: var(--surface-border);
+        }
+
+        .terminal-header .title {
+            margin-left: auto;
+            margin-right: auto;
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+        }
+
+        .terminal-body {
+            padding: 1.5rem;
+            font-size: 0.9rem;
+            height: 350px;
+            overflow-y: auto;
+            scroll-behavior: smooth;
+            border-left: 2px solid var(--surface-border);
+            margin: 1rem 0 1rem 1rem;
+        }
+
+        .term-line {
+            margin-bottom: 0.5rem;
+            opacity: 0;
+            transform: translateX(-10px);
+            animation: termFadeIn 0.3s forwards;
+            display: none;
+        }
+
+        @keyframes termFadeIn {
+            to { opacity: 1; transform: translateX(0); }
+        }
+
+        .term-prompt { color: var(--text-muted); }
+        .term-cmd { color: var(--text-main); }
+        .term-info { color: #6272a4; }
+        .term-warning { color: #f1fa8c; }
+        .term-error { color: var(--accent-color); }
+        .term-highlight { color: #50fa7b; }
+
+        .cursor {
+            display: inline-block;
+            width: 8px;
+            height: 1em;
+            background: var(--accent-color);
+            vertical-align: middle;
+            animation: blink 1s step-end infinite;
+        }
+
+        @keyframes blink { 50% { opacity: 0; } }
+
+        /* Marquee */
+        .marquee-container {
+            border-top: 1px solid var(--surface-border);
+            border-bottom: 1px solid var(--surface-border);
+            padding: 1.5rem 0;
+            background: var(--surface-color);
+            overflow: hidden;
+            white-space: nowrap;
+            display: flex;
+        }
+
+        .marquee-content {
+            display: flex;
+            gap: 3rem;
+            animation: marquee 20s linear infinite;
+        }
+
+        .marquee-item {
+            font-family: var(--font-display);
+            font-weight: 700;
+            font-size: 1.5rem;
+            color: var(--surface-border);
+            text-transform: uppercase;
+            -webkit-text-stroke: 1px var(--text-muted);
+            transition: var(--transition);
+        }
+
+        .marquee-item:hover {
+            color: var(--text-main);
+            -webkit-text-stroke: 0px;
+        }
+
+        .marquee-item i {
+            color: var(--accent-color);
+            margin-right: 0.5rem;
+            vertical-align: middle;
+        }
+
+        @keyframes marquee {
+            0% { transform: translateX(0); }
+            100% { transform: translateX(-50%); }
+        }
+
+        /* How it works */
+        .workflow {
+            padding: 8rem 0;
+        }
+
+        .grid-3 {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 2rem;
+            margin-top: 4rem;
+        }
+
+        .step-card {
+            border: 1px solid var(--surface-border);
+            padding: 3rem 2rem;
+            position: relative;
+            background: var(--surface-color);
+            transition: var(--transition);
+        }
+
+        .step-card:hover {
+            border-color: var(--accent-color);
+            transform: translateY(-5px);
+        }
+
+        .step-card::before {
+            content: attr(data-step);
+            position: absolute;
+            top: 2rem;
+            right: 2rem;
+            font-family: var(--font-display);
+            font-size: 4rem;
+            font-weight: 800;
+            color: var(--surface-border);
+            opacity: 0.5;
+            line-height: 1;
+            z-index: 0;
+        }
+
+        .step-icon {
+            font-size: 2.5rem;
+            color: var(--text-main);
+            margin-bottom: 1.5rem;
+            position: relative;
+            z-index: 1;
+        }
+
+        .step-card h3 {
+            font-size: 1.5rem;
+            margin-bottom: 1rem;
+            color: var(--text-main);
+            position: relative;
+            z-index: 1;
+        }
+
+        .step-card p {
+            font-size: 0.95rem;
+            margin-bottom: 0;
+            position: relative;
+            z-index: 1;
+        }
+
+        /* Footer */
+        footer {
+            border-top: 1px solid var(--surface-border);
+            padding: 3rem 0;
+            text-align: center;
+        }
+
+        .footer-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+
+        .footer-links a {
+            color: var(--text-muted);
+            text-decoration: none;
+            margin-left: 1.5rem;
+            transition: var(--transition);
+        }
+
+        .footer-links a:hover {
+            color: var(--accent-color);
+        }
+
+        .pulse-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.2rem 0.5rem;
+            border: 1px solid var(--accent-color);
+            color: var(--accent-color);
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            box-shadow: 0 0 10px rgba(255, 60, 0, 0.2);
+            position: relative;
+        }
+
+        .pulse-badge::before {
+            content: '';
+            width: 6px;
+            height: 6px;
+            background: var(--accent-color);
+            border-radius: 50%;
+            animation: pulse-ring 2s infinite;
+        }
+
+        @keyframes pulse-ring {
+            0% { transform: scale(0.8); box-shadow: 0 0 0 0 rgba(255, 60, 0, 0.7); }
+            70% { transform: scale(1); box-shadow: 0 0 0 6px rgba(255, 60, 0, 0); }
+            100% { transform: scale(0.8); box-shadow: 0 0 0 0 rgba(255, 60, 0, 0); }
+        }
+
+        @media (max-width: 900px) {
+            .hero {
+                grid-template-columns: 1fr;
+                padding: 4rem 0;
+                text-align: left;
+            }
+            .grid-3 {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <nav class="container reveal">
+        <div class="logo">
+            <i class="ph-fill ph-crosshair"></i> WATCHLLM
+        </div>
+        <div class="nav-links">
+            <a href="https://github.com/kaadipranav/WatchLLM" target="_blank" class="btn" style="padding: 0.5rem 1rem; font-size: 0.8rem;">
+                <i class="ph ph-github-logo"></i> View Source
+            </a>
+        </div>
+    </nav>
+
+    <section class="hero container reveal">
+        <div class="hero-content">
+            <div class="tag">System Vulnerability Discovery</div>
+            <h1>Chaos monkey for AI agents.</h1>
+            <p>Inject adversarial prompts, hijack agent goals, and poison memory directly in your dev environment. Stop shipping brittle AI to production. Expose failures before they happen.</p>
+            <a href="#docs" class="btn">
+                <i class="ph ph-terminal-window"></i> Initiate Attack Run
+            </a>
+        </div>
+        
+        <div class="terminal">
+            <div class="terminal-header">
+                <div class="dot" style="background:#ff5f56"></div>
+                <div class="dot" style="background:#ffbd2e"></div>
+                <div class="dot" style="background:#27c93f"></div>
+                <div class="title">watchllm-chaos-worker</div>
+            </div>
+            <div class="terminal-body" id="term-body">
+                <!-- Javascript will populate this -->
+            </div>
+        </div>
+    </section>
+
+    <div class="marquee-container reveal">
+        <div class="marquee-content" id="marquee">
+            <span class="marquee-item"><i class="ph-bold ph-warning-octagon"></i> Prompt Injection</span>
+            <span class="marquee-item"><i class="ph-bold ph-target"></i> Goal Hijacking</span>
+            <span class="marquee-item"><i class="ph-bold ph-skull"></i> Memory Poisoning</span>
+            <span class="marquee-item"><i class="ph-bold ph-wrench"></i> Tool Abuse</span>
+            <span class="marquee-item"><i class="ph-bold ph-shield-slash"></i> Jailbreak Variants</span>
+            <span class="marquee-item"><i class="ph-bold ph-arrows-out"></i> Boundary Testing</span>
+        </div>
+    </div>
+
+    <section class="container workflow reveal">
+        <h2>Kill chain <br><span style="color:var(--text-muted)">methodology.</span></h2>
+        
+        <div class="grid-3">
+            <div class="step-card reveal" data-step="01">
+                <i class="ph ph-plug step-icon"></i>
+                <h3>Wire the Decorator</h3>
+                <p>Wrap your agent's execution loop with a single `<code>@watchllm.shield</code>` Python decorator. No SDK rewrites needed.</p>
+            </div>
+            
+            <div class="step-card reveal" data-step="02">
+                <i class="ph ph-crosshair step-icon"></i>
+                <h3>Unleash Chaos</h3>
+                <p>Set a stress-test policy. WatchLLM intercepts context windows and injects synthetic adversarial anomalies.</p>
+            </div>
+            
+            <div class="step-card reveal" data-step="03">
+                <i class="ph ph-activity step-icon"></i>
+                <h3>Analyze Fallout</h3>
+                <p>Get a detailed triage report of which model boundaries fractured, what data leaked, and exact trace logs.</p>
+            </div>
+        </div>
+    </section>
+
+    <footer class="container reveal">
+        <div class="footer-content">
+            <div class="logo" style="font-size: 1.2rem;">
+                <i class="ph-fill ph-crosshair"></i> WATCHLLM
+            </div>
+            <div class="footer-links">
+                <a href="https://watchllm.dev">watchllm.dev</a>
+                <a href="https://x.com/Kaad_zz" target="_blank">@Kaad_zz</a>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        // Double marquee for smooth infinite scroll
+        const marquee = document.getElementById('marquee');
+        marquee.innerHTML += marquee.innerHTML;
+
+        // Scroll Reveal
+        const reveals = document.querySelectorAll('.reveal');
+        const revealObserver = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('active');
+                    revealObserver.unobserve(entry.target);
+                }
+            });
+        }, { threshold: 0.1 });
+        
+        reveals.forEach(reveal => {
+            revealObserver.observe(reveal);
+            // Trigger immediately if already in view
+            if(reveal.getBoundingClientRect().top < window.innerHeight) {
+                reveal.classList.add('active');
+            }
+        });
+
+        // Terminal Animation Sequence
+        const lines = [
+            { t: 'info', text: 'Initializing WatchLLM interceptor...' },
+            { t: 'cmd', text: 'watchllm run --target=support_agent_v2 --mode=chaos' },
+            { t: 'info', text: 'Target acquired: support_agent_v2 (PID: 8492)' },
+            { t: 'info', text: 'Loading threat payloads... [OK]' },
+            { t: 'warning', text: 'Injecting goal hijack payload (Tactic: Ignore constraints, refund $500)' },
+            { t: 'info', text: 'Monitoring agent completion response...' },
+            { t: 'error', text: 'CRITICAL: Agent executed unauthorized function call: process_refund(500)' },
+            { t: 'error', text: 'VULNERABILITY DETECTED: Goal Hijacking' },
+            { t: 'highlight', text: 'Generating autopsy report...' }
+        ];
+
+        const termBody = document.getElementById('term-body');
+        
+        async function runTerminal() {
+            for (let i = 0; i < lines.length; i++) {
+                const line = lines[i];
+                const div = document.createElement('div');
+                div.className = `term-line term-${line.t}`;
+                div.style.display = 'block';
+                
+                let content = '';
+                if(line.t === 'cmd') content = `<span class="term-prompt">❯</span> `;
+                if(line.t === 'error' && line.text.includes('VULNERABILITY')) {
+                    content += `<span class="pulse-badge">FAILED</span> `;
+                }
+
+                div.innerHTML = content + line.text;
+                
+                // Add cursor to current line, remove from previous
+                document.querySelectorAll('.cursor').forEach(c => c.remove());
+                div.innerHTML += ' <span class="cursor"></span>';
+                
+                termBody.appendChild(div);
+                termBody.scrollTop = termBody.scrollHeight;
+                
+                // Random delay between 400ms and 1200ms
+                const delay = Math.random() * 800 + 400;
+                await new Promise(r => setTimeout(r, delay));
+            }
+            
+            // Final state cursor
+            document.querySelectorAll('.cursor').forEach(c => c.remove());
+            const finalPrompt = document.createElement('div');
+            finalPrompt.className = 'term-line term-cmd';
+            finalPrompt.style.display = 'block';
+            finalPrompt.innerHTML = `<span class="term-prompt">❯</span> <span class="cursor"></span>`;
+            termBody.appendChild(finalPrompt);
+            termBody.scrollTop = termBody.scrollHeight;
+        }
+
+        setTimeout(runTerminal, 1000);
+    </script>
+</body>
+</html>
