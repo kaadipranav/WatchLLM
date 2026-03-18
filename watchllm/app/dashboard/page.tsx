@@ -32,9 +32,9 @@ function PageHeader({ count }: { count: number }) {
     <div style={{ marginBottom: "40px", borderBottom: "1px solid #1a1a2e", paddingBottom: "20px" }}>
       <h1
         style={{
-          fontFamily: "'Bebas Neue',sans-serif",
+          fontFamily: "'Manrope',sans-serif",
           fontSize: "42px",
-          fontWeight: 400,
+          fontWeight: 800,
           letterSpacing: "0.02em",
           color: "#ffffff",
           marginBottom: "12px",

@@ -95,8 +95,8 @@ export function Sidebar() {
         <span
           style={{
             display: "inline-block",
-            fontFamily: "'Bebas Neue',sans-serif",
-            fontWeight: 400,
+            fontFamily: "'Manrope',sans-serif",
+            fontWeight: 800,
             fontSize: "13px",
             letterSpacing: "0.08em",
             color: "#a594ff",
