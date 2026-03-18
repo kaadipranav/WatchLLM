@@ -102,13 +102,14 @@ export default function Home() {
   return (
     <div style={{ minHeight: "100vh", backgroundColor: "var(--bg)" }}>
       <style dangerouslySetInnerHTML={{ __html: `
+@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&display=swap');
 *{margin:0;padding:0;box-sizing:border-box}
 :root{
   --bg:#080810;--bg2:#0d0d1a;--bg3:#111120;
   --border:#1a1a2e;--border2:#22223a;
   --text:#e2e2f0;--muted:#4a4a6a;--dimmed:#1e1e32;
   --mono:'IBM Plex Mono',monospace;
-  --display:'Anton',sans-serif;
+  --display:'Bebas Neue',sans-serif;
   --purple:#7c6ef7;
   --purple-bright:#a594ff;
   --blue:#4a90d9;

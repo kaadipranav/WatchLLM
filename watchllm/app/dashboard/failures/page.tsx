@@ -8,9 +8,9 @@ export default function FailuresPage() {
       <div style={{ marginBottom: "40px", borderBottom: "1px solid #1a1a2e", paddingBottom: "20px" }}>
         <h1
           style={{
-            fontFamily: "'Anton',sans-serif",
+            fontFamily: "'Bebas Neue',sans-serif",
             fontSize: "42px",
-            fontWeight: 800,
+            fontWeight: 400,
             letterSpacing: "0.02em",
             marginBottom: "12px",
             color: "#ffffff",
