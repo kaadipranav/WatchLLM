@@ -1,10 +1,34 @@
 "use client";
 
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 
 export default function Home() {
   const termBodyRef = useRef<HTMLDivElement>(null);
+
+  const [typedWord, setTypedWord] = useState('');
+  const [wordIdx, setWordIdx] = useState(0);
+  const [isDeleting, setIsDeleting] = useState(false);
+  
+  useEffect(() => {
+    const words = ["USERS.", "ATTACKERS.", "ADVERSARIES.", "HACKERS.", "EVERYONE."];
+    const currentWord = words[wordIdx];
+    const typingSpeed = isDeleting ? 40 : 120;
+    
+    const timeout = setTimeout(() => {
+      if (!isDeleting && typedWord === currentWord) {
+        setTimeout(() => setIsDeleting(true), 2500);
+      } else if (isDeleting && typedWord === '') {
+        setIsDeleting(false);
+        setWordIdx((wordIdx + 1) % words.length);
+      } else {
+        setTypedWord(currentWord.substring(0, typedWord.length + (isDeleting ? -1 : 1)));
+      }
+    }, typingSpeed);
+    
+    return () => clearTimeout(timeout);
+  }, [typedWord, isDeleting, wordIdx]);
+
 
   useEffect(() => {
     const termLines=[
@@ -239,7 +263,11 @@ footer{padding:2rem 3rem;border-top:1px solid var(--border);display:flex;align-i
 <section className="hero">
   <div className="hero-left">
     <div className="tag"><div className="tag-dot"></div>Chaos monkey for AI agents</div>
-    <h1 className="h1">CHAOS<br /><span className="line-accent">MONKEY</span><br />FOR <span className="line-blue">AI.</span></h1>
+    <h1 className="h1" style={{ fontSize: "clamp(3.5rem, 6.5vw, 6.2rem)", lineHeight: "1.05", marginBottom: "1.5rem" }}>
+      BREAK YOUR<br />AGENTS BEFORE<br /><span className="line-blue" style={{ position: "relative" }}>
+        {typedWord}<span style={{ position: "absolute", right: "-15px", borderRight: "0.08em solid var(--blue)", animation: "blink 1s steps(1) infinite", height: "80%", top: "10%" }}></span>
+      </span>
+    </h1>
     <p className="hero-desc">
       Wire a single decorator. Fire targeted adversarial attacks across
       <code>prompt injection</code>, <code>goal hijacking</code>, memory poisoning,
