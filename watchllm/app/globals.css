@@ -480,3 +480,144 @@ button:active, .btn:active {
     animation-duration: 20s;
   }
 }
+
+/* ============================================================
+   Clerk Auth Styling — Industrial Dark Theme
+   ============================================================ */
+.cl-rootBox {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.cl-card {
+  background: rgba(13, 13, 26, 0.8) !important;
+  border: 1px solid #1a1a2e !important;
+  backdrop-filter: blur(20px);
+  border-radius: 8px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+}
+
+.cl-headerTitle {
+  font-family: "Anton", sans-serif !important;
+  font-size: 28px !important;
+  font-weight: 800 !important;
+  letter-spacing: 0.02em !important;
+  color: #ffffff !important;
+  text-transform: uppercase !important;
+}
+
+.cl-headerSubtitle {
+  font-family: "IBM Plex Mono", monospace !important;
+  font-size: 12px !important;
+  color: #4a4a6a !important;
+  letter-spacing: 0.08em !important;
+  text-transform: uppercase !important;
+}
+
+.cl-form_label {
+  font-family: "IBM Plex Mono", monospace !important;
+  font-size: 11px !important;
+  color: #8a8a93 !important;
+  letter-spacing: 0.05em !important;
+  text-transform: uppercase !important;
+  font-weight: 500 !important;
+}
+
+.cl-input {
+  background: rgba(26, 26, 46, 0.6) !important;
+  border: 1px solid #1a1a2e !important;
+  color: #ffffff !important;
+  border-radius: 4px !important;
+  font-family: "IBM Plex Mono", monospace !important;
+  font-size: 13px !important;
+  transition: all 200ms ease !important;
+}
+
+.cl-input:focus {
+  background: rgba(26, 26, 46, 0.8) !important;
+  border-color: rgba(124, 110, 247, 0.5) !important;
+  box-shadow: 0 0 12px rgba(124, 110, 247, 0.2) !important;
+}
+
+.cl-input::placeholder {
+  color: #4a4a6a !important;
+}
+
+.cl-button {
+  background: #7c6ef7 !important;
+  border: 1px solid #7c6ef7 !important;
+  color: #ffffff !important;
+  font-family: "IBM Plex Mono", monospace !important;
+  font-size: 12px !important;
+  font-weight: 600 !important;
+  letter-spacing: 0.08em !important;
+  text-transform: uppercase !important;
+  border-radius: 4px !important;
+  transition: all 200ms ease !important;
+}
+
+.cl-button:hover {
+  background: #a594ff !important;
+  border-color: #a594ff !important;
+  box-shadow: 0 0 20px rgba(124, 110, 247, 0.3) !important;
+  transform: translateY(-2px) !important;
+}
+
+.cl-button:active {
+  transform: translateY(0) !important;
+}
+
+.cl-dividerText {
+  font-family: "IBM Plex Mono", monospace !important;
+  font-size: 11px !important;
+  color: #4a4a6a !important;
+  letter-spacing: 0.05em !important;
+}
+
+.cl-divider {
+  background: #1a1a2e !important;
+}
+
+.cl-socialButton {
+  background: rgba(26, 26, 46, 0.6) !important;
+  border: 1px solid #1a1a2e !important;
+  color: #ffffff !important;
+  border-radius: 4px !important;
+  transition: all 200ms ease !important;
+}
+
+.cl-socialButton:hover {
+  background: rgba(124, 110, 247, 0.1) !important;
+  border-color: rgba(124, 110, 247, 0.3) !important;
+}
+
+.cl-link {
+  color: #a594ff !important;
+  text-decoration: none !important;
+  transition: color 150ms ease !important;
+  font-family: "IBM Plex Mono", monospace !important;
+  font-size: 12px !important;
+}
+
+.cl-link:hover {
+  color: #ffffff !important;
+}
+
+.cl-alert {
+  background: rgba(245, 71, 92, 0.1) !important;
+  border: 1px solid rgba(245, 71, 92, 0.3) !important;
+  color: #ff6b7b !important;
+  border-radius: 4px !important;
+  font-family: "IBM Plex Mono", monospace !important;
+  font-size: 12px !important;
+}
+
+.cl-checkbox {
+  border-color: #1a1a2e !important;
+}
+
+.cl-checkbox:checked {
+  background: #7c6ef7 !important;
+  border-color: #7c6ef7 !important;
+}
