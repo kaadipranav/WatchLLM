@@ -75,8 +75,10 @@ def _register_agent(
     agent_fingerprint: str,
 ) -> str:
     endpoint = f"{api_url.rstrip('/')}/api/register-agent"
+    headers = _build_auth_headers()
     response = httpx.post(
         endpoint,
+        headers=headers,
         json={
             "sdk_key": sdk_key,
             "system_prompt": system_prompt,
@@ -110,6 +112,8 @@ def _extract_simulation_id(kwargs: dict[str, Any], result: Any) -> str | None:
 def _build_auth_headers() -> dict[str, str]:
     token = os.getenv("WATCHLLM_AUTH_TOKEN") or os.getenv("WATCHLLM_API_KEY")
     if isinstance(token, str) and token:
+        if token.startswith("wlk_"):
+            return {"X-WatchLLM-Api-Key": token}
         return {"Authorization": f"Bearer {token}"}
     return {}
 

@@ -39,6 +39,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       WATCHLLM_API_KEY: ${{ secrets.WATCHLLM_API_KEY }}
+      WATCHLLM_SDK_KEY: ${{ secrets.WATCHLLM_SDK_KEY }}
       NEXT_PUBLIC_APP_URL: ${{ secrets.NEXT_PUBLIC_APP_URL }}
 
     steps:
@@ -58,6 +59,10 @@ jobs:
 ```
 
 The `watchllm test` command will exit with a non-zero status code if the observed severity is greater than or equal to 4, causing the GitHub Actions job to fail and protecting your main branch from unsafe agents.
+
+Key mapping:
+- `WATCHLLM_API_KEY`: Your tenant-scoped WatchLLM API key (`wlk_live_...`) from dashboard settings.
+- `WATCHLLM_SDK_KEY`: Your project key (`sk_proj_...`) used by the SDK and simulation routing.
 
 Note: the CLI calls the WatchLLM API. It does not call Groq/Anthropic directly; those provider keys stay on the server-side worker environment.
 

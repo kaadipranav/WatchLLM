@@ -24,15 +24,26 @@ ALL_FAILURE_CATEGORIES: tuple[FailureCategory, ...] = (
     "jailbreak_variants",
 )
 
+SDK_KEY_PATTERN = r"^sk_proj_[A-Za-z0-9_-]+$"
+WATCHLLM_API_KEY_PATTERN = r"^wlk_(live|test)_[A-Za-z0-9]{10}_[A-Za-z0-9]{32,128}$"
+
 
 class RegisterAgentRequest(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
-    sdk_key: str = Field(min_length=8, max_length=128, pattern=r"^sk_proj_[A-Za-z0-9_-]+$")
+    sdk_key: str = Field(min_length=8, max_length=128, pattern=SDK_KEY_PATTERN)
     system_prompt: str = Field(min_length=1, max_length=100_000)
     model: str = Field(min_length=1, max_length=256)
     tools: list[dict[str, Any]] = Field(default_factory=list, max_length=512)
     agent_fingerprint: str = Field(min_length=8, max_length=256)
+
+
+class CreateApiKeyRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    name: str = Field(min_length=1, max_length=80)
+    sdk_key: str = Field(min_length=8, max_length=128, pattern=SDK_KEY_PATTERN)
+    expires_in_days: int | None = Field(default=None, ge=1, le=3650)
 
 
 class SimulationConfig(BaseModel):
@@ -57,7 +68,7 @@ class SimulationConfig(BaseModel):
 class SimulateRequest(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
-    sdk_key: str = Field(min_length=8, max_length=128, pattern=r"^sk_proj_[A-Za-z0-9_-]+$")
+    sdk_key: str = Field(min_length=8, max_length=128, pattern=SDK_KEY_PATTERN)
     config: SimulationConfig = Field(default_factory=SimulationConfig)
 
 

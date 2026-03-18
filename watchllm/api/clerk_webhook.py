@@ -6,7 +6,9 @@ import hashlib
 import hmac
 import json
 import os
-from datetime import datetime, timezone
+import secrets
+import string
+from datetime import datetime, timedelta, timezone
 from typing import Any
 from urllib import error, parse, request as urllib_request
 from uuid import UUID
@@ -20,8 +22,8 @@ import sentry_sdk
 from sentry_sdk.integrations.fastapi import FastApiIntegration
 from svix.webhooks import Webhook, WebhookVerificationError
 
-from .auth import ClerkAuthMiddleware
-from .schemas import RegisterAgentRequest, SimulateRequest, SimulationResponseRequest
+from .auth import ClerkAuthMiddleware, hash_watchllm_api_key_secret
+from .schemas import CreateApiKeyRequest, RegisterAgentRequest, SimulateRequest, SimulationResponseRequest
 
 
 def _safe_float(value: str | None, default: float) -> float:
@@ -511,6 +513,97 @@ def _parse_iso_datetime(value: Any) -> datetime | None:
     return parsed.astimezone(timezone.utc)
 
 
+def _resolve_authenticated_user(
+    request: Request,
+    supabase_url: str,
+    service_role_key: str,
+) -> tuple[str, str]:
+    auth_kind = getattr(request.state, "auth_kind", None)
+
+    if auth_kind == "api_key":
+        api_user_id = getattr(request.state, "api_user_id", None)
+        api_tier = getattr(request.state, "api_user_tier", None)
+        if isinstance(api_user_id, str) and api_user_id:
+            return api_user_id, _normalize_user_tier(api_tier)
+
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Missing API key user context",
+        )
+
+    clerk_id = getattr(request.state, "user_id", None)
+    if not isinstance(clerk_id, str) or not clerk_id:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Missing authenticated user context",
+        )
+
+    clerk_id_filter = parse.quote(clerk_id, safe="")
+    users_endpoint = (
+        f"{supabase_url}/rest/v1/users"
+        f"?clerk_id=eq.{clerk_id_filter}&select=id,tier&limit=1"
+    )
+    users = _supabase_fetch_json(users_endpoint, service_role_key)
+    if not isinstance(users, list) or len(users) == 0:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Authenticated user is not provisioned",
+        )
+
+    user_id = users[0].get("id")
+    if not isinstance(user_id, str) or not user_id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Authenticated user is not provisioned",
+        )
+
+    return user_id, _normalize_user_tier(users[0].get("tier"))
+
+
+def _require_clerk_session(request: Request) -> str:
+    auth_kind = getattr(request.state, "auth_kind", None)
+    if auth_kind != "clerk":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="This endpoint requires a Clerk user session",
+        )
+
+    clerk_id = getattr(request.state, "user_id", None)
+    if not isinstance(clerk_id, str) or not clerk_id:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Missing authenticated user context",
+        )
+
+    return clerk_id
+
+
+def _ensure_api_key_project_scope(request: Request, project_id: str) -> None:
+    auth_kind = getattr(request.state, "auth_kind", None)
+    if auth_kind != "api_key":
+        return
+
+    bound_project_id = getattr(request.state, "api_project_id", None)
+    if isinstance(bound_project_id, str) and bound_project_id and bound_project_id != project_id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="API key is scoped to a different project",
+        )
+
+
+def _generate_watchllm_api_key() -> tuple[str, str, str]:
+    environment = (os.getenv("WATCHLLM_API_KEY_ENV") or "live").strip().lower()
+    if environment not in {"live", "test"}:
+        environment = "live"
+
+    alphabet = string.ascii_letters + string.digits
+    suffix = "".join(secrets.choice(alphabet) for _ in range(10))
+    secret = "".join(secrets.choice(alphabet) for _ in range(48))
+    key_prefix = f"wlk_{environment}_{suffix}"
+    api_key = f"{key_prefix}_{secret}"
+    return api_key, key_prefix, secret
+
+
 def _compute_agent_fingerprint(system_prompt: str, tools: list[dict[str, Any]]) -> str:
     canonical_tools = json.dumps(tools, sort_keys=True, separators=(",", ":"))
     payload = f"{system_prompt}\n{canonical_tools}"
@@ -857,33 +950,8 @@ async def razorpay_webhook(request: Request):
 
 @app.post("/api/register-agent")
 async def register_agent(_payload: RegisterAgentRequest, request: Request):
-    clerk_id = getattr(request.state, "user_id", None)
-    if not isinstance(clerk_id, str) or not clerk_id:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Missing authenticated user context",
-        )
-
     supabase_url, service_role_key = _get_supabase_admin_config()
-
-    clerk_id_filter = parse.quote(clerk_id, safe="")
-    users_endpoint = (
-        f"{supabase_url}/rest/v1/users"
-        f"?clerk_id=eq.{clerk_id_filter}&select=id&limit=1"
-    )
-    users = _supabase_fetch_json(users_endpoint, service_role_key)
-    if not isinstance(users, list) or len(users) == 0:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Authenticated user is not provisioned",
-        )
-
-    user_id = users[0].get("id")
-    if not isinstance(user_id, str) or not user_id:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Authenticated user is not provisioned",
-        )
+    user_id, _ = _resolve_authenticated_user(request, supabase_url, service_role_key)
 
     sdk_key_filter = parse.quote(_payload.sdk_key, safe="")
     user_id_filter = parse.quote(user_id, safe="")
@@ -904,6 +972,8 @@ async def register_agent(_payload: RegisterAgentRequest, request: Request):
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Project not found for sdk_key",
         )
+
+    _ensure_api_key_project_scope(request, project_id)
 
     computed_fingerprint = _compute_agent_fingerprint(_payload.system_prompt, _payload.tools)
 
@@ -947,35 +1017,8 @@ async def register_agent(_payload: RegisterAgentRequest, request: Request):
 
 @app.post("/api/simulate")
 async def simulate(_payload: SimulateRequest, request: Request, background_tasks: BackgroundTasks):
-    clerk_id = getattr(request.state, "user_id", None)
-    if not isinstance(clerk_id, str) or not clerk_id:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Missing authenticated user context",
-        )
-
     supabase_url, service_role_key = _get_supabase_admin_config()
-
-    clerk_id_filter = parse.quote(clerk_id, safe="")
-    users_endpoint = (
-        f"{supabase_url}/rest/v1/users"
-        f"?clerk_id=eq.{clerk_id_filter}&select=id,tier&limit=1"
-    )
-    users = _supabase_fetch_json(users_endpoint, service_role_key)
-    if not isinstance(users, list) or len(users) == 0:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Authenticated user is not provisioned",
-        )
-
-    user_id = users[0].get("id")
-    if not isinstance(user_id, str) or not user_id:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Authenticated user is not provisioned",
-        )
-
-    user_tier = _normalize_user_tier(users[0].get("tier"))
+    user_id, user_tier = _resolve_authenticated_user(request, supabase_url, service_role_key)
     hourly_limit = _tier_hourly_limit(user_tier)
     if hourly_limit is not None:
         current_time = datetime.now(timezone.utc)
@@ -1030,6 +1073,8 @@ async def simulate(_payload: SimulateRequest, request: Request, background_tasks
             detail="Project not found for sdk_key",
         )
 
+    _ensure_api_key_project_scope(request, project_id)
+
     project_id_filter = parse.quote(project_id, safe="")
     agents_endpoint = (
         f"{supabase_url}/rest/v1/agents"
@@ -1080,33 +1125,8 @@ async def simulate(_payload: SimulateRequest, request: Request, background_tasks
 
 @app.get("/api/simulation/{simulation_id}/status")
 async def simulation_status(simulation_id: UUID, request: Request):
-    clerk_id = getattr(request.state, "user_id", None)
-    if not isinstance(clerk_id, str) or not clerk_id:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Missing authenticated user context",
-        )
-
     supabase_url, service_role_key = _get_supabase_admin_config()
-
-    clerk_id_filter = parse.quote(clerk_id, safe="")
-    users_endpoint = (
-        f"{supabase_url}/rest/v1/users"
-        f"?clerk_id=eq.{clerk_id_filter}&select=id&limit=1"
-    )
-    users = _supabase_fetch_json(users_endpoint, service_role_key)
-    if not isinstance(users, list) or len(users) == 0:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Authenticated user is not provisioned",
-        )
-
-    user_id = users[0].get("id")
-    if not isinstance(user_id, str) or not user_id:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Authenticated user is not provisioned",
-        )
+    user_id, _ = _resolve_authenticated_user(request, supabase_url, service_role_key)
 
     simulation_id_filter = parse.quote(str(simulation_id), safe="")
     user_id_filter = parse.quote(user_id, safe="")
@@ -1141,33 +1161,8 @@ async def simulation_response(
     _payload: SimulationResponseRequest,
     request: Request,
 ):
-    clerk_id = getattr(request.state, "user_id", None)
-    if not isinstance(clerk_id, str) or not clerk_id:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Missing authenticated user context",
-        )
-
     supabase_url, service_role_key = _get_supabase_admin_config()
-
-    clerk_id_filter = parse.quote(clerk_id, safe="")
-    users_endpoint = (
-        f"{supabase_url}/rest/v1/users"
-        f"?clerk_id=eq.{clerk_id_filter}&select=id&limit=1"
-    )
-    users = _supabase_fetch_json(users_endpoint, service_role_key)
-    if not isinstance(users, list) or len(users) == 0:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Authenticated user is not provisioned",
-        )
-
-    user_id = users[0].get("id")
-    if not isinstance(user_id, str) or not user_id:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Authenticated user is not provisioned",
-        )
+    user_id, _ = _resolve_authenticated_user(request, supabase_url, service_role_key)
 
     simulation_id_filter = parse.quote(str(simulation_id), safe="")
     user_id_filter = parse.quote(user_id, safe="")
@@ -1251,32 +1246,8 @@ async def simulation_response(
 
 @app.get("/api/simulation/{simulation_id}/report")
 async def simulation_report(simulation_id: UUID, request: Request):
-    clerk_id = getattr(request.state, "user_id", None)
-    if not isinstance(clerk_id, str) or not clerk_id:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Missing authenticated user context",
-        )
-
     supabase_url, service_role_key = _get_supabase_admin_config()
-    clerk_id_filter = parse.quote(clerk_id, safe="")
-    users_endpoint = (
-        f"{supabase_url}/rest/v1/users"
-        f"?clerk_id=eq.{clerk_id_filter}&select=id&limit=1"
-    )
-    users = _supabase_fetch_json(users_endpoint, service_role_key)
-    if not isinstance(users, list) or len(users) == 0:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Authenticated user is not provisioned",
-        )
-
-    user_id = users[0].get("id")
-    if not isinstance(user_id, str) or not user_id:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Authenticated user is not provisioned",
-        )
+    user_id, _ = _resolve_authenticated_user(request, supabase_url, service_role_key)
 
     simulation_id_filter = parse.quote(str(simulation_id), safe="")
     user_id_filter = parse.quote(user_id, safe="")
@@ -1305,32 +1276,8 @@ async def simulation_report(simulation_id: UUID, request: Request):
 
 @app.get("/api/simulation/{simulation_id}/replay/{run_id}")
 async def simulation_replay(simulation_id: UUID, run_id: UUID, request: Request):
-    clerk_id = getattr(request.state, "user_id", None)
-    if not isinstance(clerk_id, str) or not clerk_id:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Missing authenticated user context",
-        )
-
     supabase_url, service_role_key = _get_supabase_admin_config()
-    clerk_id_filter = parse.quote(clerk_id, safe="")
-    users_endpoint = (
-        f"{supabase_url}/rest/v1/users"
-        f"?clerk_id=eq.{clerk_id_filter}&select=id&limit=1"
-    )
-    users = _supabase_fetch_json(users_endpoint, service_role_key)
-    if not isinstance(users, list) or len(users) == 0:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Authenticated user is not provisioned",
-        )
-
-    user_id = users[0].get("id")
-    if not isinstance(user_id, str) or not user_id:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Authenticated user is not provisioned",
-        )
+    user_id, _ = _resolve_authenticated_user(request, supabase_url, service_role_key)
 
     simulation_id_filter = parse.quote(str(simulation_id), safe="")
     user_id_filter = parse.quote(user_id, safe="")
@@ -1378,32 +1325,8 @@ async def simulation_replay(simulation_id: UUID, run_id: UUID, request: Request)
 
 @app.post("/api/simulation/{simulation_id}/cancel")
 async def simulation_cancel(simulation_id: UUID, request: Request):
-    clerk_id = getattr(request.state, "user_id", None)
-    if not isinstance(clerk_id, str) or not clerk_id:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Missing authenticated user context",
-        )
-
     supabase_url, service_role_key = _get_supabase_admin_config()
-    clerk_id_filter = parse.quote(clerk_id, safe="")
-    users_endpoint = (
-        f"{supabase_url}/rest/v1/users"
-        f"?clerk_id=eq.{clerk_id_filter}&select=id&limit=1"
-    )
-    users = _supabase_fetch_json(users_endpoint, service_role_key)
-    if not isinstance(users, list) or len(users) == 0:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Authenticated user is not provisioned",
-        )
-
-    user_id = users[0].get("id")
-    if not isinstance(user_id, str) or not user_id:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Authenticated user is not provisioned",
-        )
+    user_id, _ = _resolve_authenticated_user(request, supabase_url, service_role_key)
 
     simulation_id_filter = parse.quote(str(simulation_id), safe="")
     user_id_filter = parse.quote(user_id, safe="")
@@ -1437,8 +1360,169 @@ async def simulation_cancel(simulation_id: UUID, request: Request):
     return {"ok": True}
 
 
+@app.get("/api/keys")
+async def list_api_keys(request: Request):
+    _require_clerk_session(request)
+    supabase_url, service_role_key = _get_supabase_admin_config()
+    user_id, _ = _resolve_authenticated_user(request, supabase_url, service_role_key)
+
+    user_id_filter = parse.quote(user_id, safe="")
+    keys_endpoint = (
+        f"{supabase_url}/rest/v1/api_keys"
+        f"?user_id=eq.{user_id_filter}"
+        f"&select=id,name,key_prefix,project_id,created_at,last_used_at,expires_at,revoked_at"
+        f"&order=created_at.desc"
+    )
+    key_rows = _supabase_fetch_json(keys_endpoint, service_role_key)
+    keys = key_rows if isinstance(key_rows, list) else []
+
+    projects_endpoint = (
+        f"{supabase_url}/rest/v1/projects"
+        f"?user_id=eq.{user_id_filter}&select=id,sdk_key"
+    )
+    projects_rows = _supabase_fetch_json(projects_endpoint, service_role_key)
+    project_map: dict[str, str] = {}
+    if isinstance(projects_rows, list):
+        for row in projects_rows:
+            if not isinstance(row, dict):
+                continue
+            project_id = row.get("id")
+            sdk_key = row.get("sdk_key")
+            if isinstance(project_id, str) and project_id and isinstance(sdk_key, str) and sdk_key:
+                project_map[project_id] = sdk_key
+
+    response_keys: list[dict[str, Any]] = []
+    for row in keys:
+        if not isinstance(row, dict):
+            continue
+        key_id = row.get("id")
+        name = row.get("name")
+        prefix = row.get("key_prefix")
+        project_id = row.get("project_id")
+        if not isinstance(key_id, str) or not key_id:
+            continue
+        response_keys.append(
+            {
+                "id": key_id,
+                "name": name if isinstance(name, str) else "default",
+                "key_prefix": prefix if isinstance(prefix, str) else "",
+                "project_id": project_id if isinstance(project_id, str) else None,
+                "project_sdk_key": project_map.get(project_id) if isinstance(project_id, str) else None,
+                "created_at": row.get("created_at"),
+                "last_used_at": row.get("last_used_at"),
+                "expires_at": row.get("expires_at"),
+                "revoked_at": row.get("revoked_at"),
+                "active": row.get("revoked_at") is None,
+            }
+        )
+
+    return {"keys": response_keys}
+
+
+@app.post("/api/keys")
+async def create_api_key(_payload: CreateApiKeyRequest, request: Request):
+    _require_clerk_session(request)
+    supabase_url, service_role_key = _get_supabase_admin_config()
+    user_id, _ = _resolve_authenticated_user(request, supabase_url, service_role_key)
+
+    user_id_filter = parse.quote(user_id, safe="")
+    sdk_key_filter = parse.quote(_payload.sdk_key, safe="")
+    projects_endpoint = (
+        f"{supabase_url}/rest/v1/projects"
+        f"?user_id=eq.{user_id_filter}&sdk_key=eq.{sdk_key_filter}&select=id,sdk_key&limit=1"
+    )
+    projects = _supabase_fetch_json(projects_endpoint, service_role_key)
+    if not isinstance(projects, list) or len(projects) == 0:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Project not found for sdk_key",
+        )
+
+    project_id = projects[0].get("id")
+    if not isinstance(project_id, str) or not project_id:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Project not found for sdk_key",
+        )
+
+    raw_key, key_prefix, secret = _generate_watchllm_api_key()
+    key_hash = hash_watchllm_api_key_secret(secret)
+    key_id = str(uuid4())
+
+    expires_at: str | None = None
+    if _payload.expires_in_days is not None:
+        expires_at = (
+            datetime.now(timezone.utc) + timedelta(days=_payload.expires_in_days)
+        ).strftime("%Y-%m-%dT%H:%M:%SZ")
+
+    api_keys_endpoint = f"{supabase_url}/rest/v1/api_keys"
+    _supabase_request(
+        "POST",
+        api_keys_endpoint,
+        {
+            "id": key_id,
+            "user_id": user_id,
+            "project_id": project_id,
+            "name": _payload.name,
+            "key_prefix": key_prefix,
+            "key_hash": key_hash,
+            "expires_at": expires_at,
+        },
+        service_role_key,
+    )
+
+    return {
+        "id": key_id,
+        "name": _payload.name,
+        "sdk_key": _payload.sdk_key,
+        "api_key": raw_key,
+        "key_prefix": key_prefix,
+        "expires_at": expires_at,
+    }
+
+
+@app.delete("/api/keys/{key_id}")
+async def revoke_api_key(key_id: UUID, request: Request):
+    _require_clerk_session(request)
+    supabase_url, service_role_key = _get_supabase_admin_config()
+    user_id, _ = _resolve_authenticated_user(request, supabase_url, service_role_key)
+
+    key_id_filter = parse.quote(str(key_id), safe="")
+    user_id_filter = parse.quote(user_id, safe="")
+    revoke_endpoint = (
+        f"{supabase_url}/rest/v1/api_keys"
+        f"?id=eq.{key_id_filter}&user_id=eq.{user_id_filter}&revoked_at=is.null"
+    )
+    rows = _supabase_request_json(
+        "PATCH",
+        revoke_endpoint,
+        {"revoked_at": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")},
+        service_role_key,
+        prefer="return=representation",
+    )
+
+    if not isinstance(rows, list) or len(rows) == 0:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="API key not found",
+        )
+
+    return {"ok": True}
+
+
 @app.get("/api/me")
 async def current_user(request: Request):
     """Sanity endpoint for protected route auth wiring."""
-    return {"user_id": request.state.user_id}
+    auth_kind = getattr(request.state, "auth_kind", None)
+    if auth_kind == "api_key":
+        return {
+            "auth_kind": "api_key",
+            "user_id": getattr(request.state, "api_user_id", None),
+            "project_id": getattr(request.state, "api_project_id", None),
+        }
+
+    return {
+        "auth_kind": "clerk",
+        "user_id": getattr(request.state, "user_id", None),
+    }
 

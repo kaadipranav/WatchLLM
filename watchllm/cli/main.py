@@ -73,12 +73,12 @@ def _resolve_cli_auth_values() -> tuple[str, str, str]:
 
     api_key = _resolve_setting("WATCHLLM_API_KEY", config)
     api_base = _resolve_setting("NEXT_PUBLIC_APP_URL", config)
-    sdk_key = _resolve_setting("WATCHLLM_SDK_KEY", config) or api_key
+    sdk_key = _resolve_setting("WATCHLLM_SDK_KEY", config)
 
     api_key = _require_non_empty(
         api_key,
         "Missing WATCHLLM_API_KEY. Set it in env or ~/.watchllm/config. "
-        "This should be a Clerk session bearer token for API authentication.",
+        "Use a WatchLLM API key from the dashboard settings page.",
     )
     api_base = _require_non_empty(
         api_base,
@@ -88,10 +88,22 @@ def _resolve_cli_auth_values() -> tuple[str, str, str]:
     sdk_key = _require_non_empty(
         sdk_key,
         "Missing WATCHLLM_SDK_KEY. Set it in env or ~/.watchllm/config. "
-        "If omitted, WATCHLLM_API_KEY is used as fallback.",
+        "This is your project SDK key (sk_proj_...).",
     )
 
     return api_key, api_base.rstrip("/"), sdk_key
+
+
+def _build_auth_headers(api_key: str) -> dict[str, str]:
+    if api_key.startswith("wlk_"):
+        return {
+            "X-WatchLLM-Api-Key": api_key,
+            "Content-Type": "application/json",
+        }
+    return {
+        "Authorization": f"Bearer {api_key}",
+        "Content-Type": "application/json",
+    }
 
 
 def _extract_severity_from_report(report_payload: Any) -> int:
@@ -140,16 +152,13 @@ def _request_json(
 def run_simulation(
     *,
     api_base: str,
-    bearer_token: str,
+    api_key: str,
     sdk_key: str,
     categories: list[str],
     num_runs: int,
     max_turns: int,
 ) -> tuple[str, str, int]:
-    headers = {
-        "Authorization": f"Bearer {bearer_token}",
-        "Content-Type": "application/json",
-    }
+    headers = _build_auth_headers(api_key)
     with httpx.Client(timeout=30.0) as client:
         simulate_url = f"{api_base}/api/simulate"
         status_code, payload, response_headers = _request_json(
@@ -220,7 +229,7 @@ def run_simulation(
             time.sleep(0.5)
 
 
-def run_attack(target: str, api_base: str, bearer_token: str, sdk_key: str) -> int:
+def run_attack(target: str, api_base: str, api_key: str, sdk_key: str) -> int:
     """
     Run a real chaos simulation against the API and return severity (0-5).
 
@@ -233,7 +242,7 @@ def run_attack(target: str, api_base: str, bearer_token: str, sdk_key: str) -> i
     print(f"Using target agent file: {path}")
     status, simulation_id, _progress = run_simulation(
         api_base=api_base,
-        bearer_token=bearer_token,
+        api_key=api_key,
         sdk_key=sdk_key,
         categories=DEFAULT_CATEGORIES,
         num_runs=50,
@@ -245,10 +254,7 @@ def run_attack(target: str, api_base: str, bearer_token: str, sdk_key: str) -> i
     if status != "completed":
         return 5
 
-    headers = {
-        "Authorization": f"Bearer {bearer_token}",
-        "Content-Type": "application/json",
-    }
+    headers = _build_auth_headers(api_key)
     report_url = f"{api_base}/api/simulation/{simulation_id}/report"
     with httpx.Client(timeout=30.0) as client:
         status_code, payload, _ = _request_json(
@@ -348,6 +354,7 @@ def build_parser() -> argparse.ArgumentParser:
 def run_doctor() -> int:
     config = _load_watchllm_config()
     api_key = _resolve_setting("WATCHLLM_API_KEY", config)
+    sdk_key = _resolve_setting("WATCHLLM_SDK_KEY", config)
     api_base = _resolve_setting("NEXT_PUBLIC_APP_URL", config)
     supabase_url = _resolve_setting("NEXT_PUBLIC_SUPABASE_URL", config)
 
@@ -358,6 +365,13 @@ def run_doctor() -> int:
             "WATCHLLM_API_KEY present",
             bool(api_key),
             "Set WATCHLLM_API_KEY in env or ~/.watchllm/config",
+        )
+    )
+    checks.append(
+        (
+            "WATCHLLM_SDK_KEY present",
+            bool(sdk_key),
+            "Set WATCHLLM_SDK_KEY (sk_proj_...) in env or ~/.watchllm/config",
         )
     )
     checks.append(
@@ -456,7 +470,7 @@ def main(argv: Optional[Iterable[str]] = None) -> None:
 
         status, _simulation_id, _progress = run_simulation(
             api_base=api_base,
-            bearer_token=api_key,
+            api_key=api_key,
             sdk_key=sdk_key,
             categories=DEFAULT_CATEGORIES,
             num_runs=max(1, int(args.num_runs)),
