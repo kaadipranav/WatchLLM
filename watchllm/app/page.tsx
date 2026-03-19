@@ -278,8 +278,10 @@ export default function Home() {
                   data-reveal-state="visible"
                   style={{ ["--delay" as string]: "200ms" }}
                 >
-                  Run the <span className={styles.heroAccent}>red team</span> before production
-                  runs you.
+                  <span className={styles.heroLeadLine}>
+                    Run the <span className={styles.heroAccent}>red team</span>
+                  </span>{" "}
+                  before production runs you.
                 </h1>
 
                 <p
