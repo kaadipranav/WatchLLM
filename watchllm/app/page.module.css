@@ -1,6 +1,7 @@
 @import url("https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@700;800;900&family=IBM+Plex+Mono:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap");
 
 .shell {
+  --content-width: 1420px;
   --font-display: "Big Shoulders Display", sans-serif;
   --font-sans: "IBM Plex Sans", sans-serif;
   --font-mono: "IBM Plex Mono", monospace;
@@ -58,7 +59,7 @@
 }
 
 .frame {
-  max-width: calc(1240px + 4rem);
+  max-width: calc(var(--content-width) + 4rem);
   margin: 0 auto;
   padding: 0 2rem;
   position: relative;
@@ -78,15 +79,15 @@
 }
 
 .frame::before {
-  left: max(1rem, calc((100vw - 1240px) / 2));
+  left: max(1rem, calc((100vw - var(--content-width)) / 2));
 }
 
 .frame::after {
-  right: max(1rem, calc((100vw - 1240px) / 2));
+  right: max(1rem, calc((100vw - var(--content-width)) / 2));
 }
 
 .container {
-  max-width: 1240px;
+  max-width: var(--content-width);
   margin: 0 auto;
   position: relative;
   z-index: 1;
@@ -107,16 +108,22 @@
 }
 
 .topbar {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  margin: 0 -2rem;
+  padding: 0 2rem;
+  border-bottom: 1px solid var(--line);
+  background: linear-gradient(180deg, rgba(11, 13, 15, 0.92), rgba(11, 13, 15, 0.72));
+  backdrop-filter: blur(14px);
+}
+
+.topbarInner {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 2rem;
-  padding: 1.3rem 0 1rem;
-  position: sticky;
-  top: 0;
-  z-index: 20;
-  background: linear-gradient(180deg, rgba(11, 13, 15, 0.92), rgba(11, 13, 15, 0.72));
-  backdrop-filter: blur(14px);
+  min-height: 84px;
 }
 
 .brand,
@@ -181,10 +188,10 @@
 
 .hero {
   display: grid;
-  grid-template-columns: minmax(0, 1.03fr) minmax(360px, 0.97fr);
-  gap: 3rem;
+  grid-template-columns: minmax(0, 1fr) minmax(470px, 0.95fr);
+  gap: 2.2rem;
   align-items: center;
-  padding: 4.2rem 0 3.3rem;
+  padding: 3.5rem 0 3.1rem;
   min-height: calc(100svh - 92px);
 }
 
@@ -220,7 +227,7 @@
 }
 
 .heroWordmark .brandWatch {
-  font-size: clamp(4rem, 11vw, 7.9rem);
+  font-size: clamp(3.4rem, 8.6vw, 6.7rem);
 }
 
 .heroWordmark .brandLlm {
@@ -232,7 +239,7 @@
 .heroTitle {
   max-width: 10.5ch;
   font-family: var(--font-display);
-  font-size: clamp(3.8rem, 10vw, 8rem);
+  font-size: clamp(3.2rem, 8.3vw, 6.85rem);
   font-weight: 900;
   line-height: 0.9;
   letter-spacing: 0.01em;
@@ -926,9 +933,16 @@
   }
 
   .topbar {
+    margin: 0 -1rem;
+    padding: 0 1rem;
+  }
+
+  .topbarInner {
     align-items: flex-start;
     flex-direction: column;
-    padding-top: 1rem;
+    justify-content: center;
+    min-height: 88px;
+    padding: 0.75rem 0;
   }
 
   .hero {

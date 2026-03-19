@@ -227,26 +227,28 @@ export default function Home() {
       <div className={styles.shell}>
         <div className={styles.frame}>
           <header
-            className={`${styles.topbar} ${styles.container} ${styles.reveal}`}
+            className={`${styles.topbar} ${styles.reveal}`}
             data-reveal
             data-reveal-state="visible"
           >
-            <a className={styles.brand} href="#top" aria-label="WatchLLM home">
-              <span className={styles.brandWatch}>Watch</span>
-              <span className={styles.brandLlm}>LLM</span>
-            </a>
-
-            <nav className={styles.topbarLinks} aria-label="Primary">
-              <a href="#attacks">Attack Library</a>
-              <a href="#workflow">How It Works</a>
-              <a
-                href="https://github.com/kaadipranav/WatchLLM"
-                target="_blank"
-                rel="noreferrer"
-              >
-                GitHub
+            <div className={`${styles.container} ${styles.topbarInner}`}>
+              <a className={styles.brand} href="#top" aria-label="WatchLLM home">
+                <span className={styles.brandWatch}>Watch</span>
+                <span className={styles.brandLlm}>LLM</span>
               </a>
-            </nav>
+
+              <nav className={styles.topbarLinks} aria-label="Primary">
+                <a href="#attacks">Attack Library</a>
+                <a href="#workflow">How It Works</a>
+                <a
+                  href="https://github.com/kaadipranav/WatchLLM"
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  GitHub
+                </a>
+              </nav>
+            </div>
           </header>
 
           <main id="top">
