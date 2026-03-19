@@ -225,32 +225,32 @@ export default function Home() {
       <LandingPageEffects terminalSequence={terminalSequence} />
 
       <div className={styles.shell}>
-        <div className={styles.frame}>
-          <header
-            className={`${styles.topbar} ${styles.reveal}`}
-            data-reveal
-            data-reveal-state="visible"
-          >
-            <div className={`${styles.container} ${styles.topbarInner}`}>
-              <a className={styles.brand} href="#top" aria-label="WatchLLM home">
-                <span className={styles.brandWatch}>Watch</span>
-                <span className={styles.brandLlm}>LLM</span>
+        <header
+          className={`${styles.topbar} ${styles.reveal}`}
+          data-reveal
+          data-reveal-state="visible"
+        >
+          <div className={`${styles.container} ${styles.topbarInner}`}>
+            <a className={styles.brand} href="#top" aria-label="WatchLLM home">
+              <span className={styles.brandWatch}>Watch</span>
+              <span className={styles.brandLlm}>LLM</span>
+            </a>
+
+            <nav className={styles.topbarLinks} aria-label="Primary">
+              <a href="#attacks">Attack Library</a>
+              <a href="#workflow">How It Works</a>
+              <a
+                href="https://github.com/kaadipranav/WatchLLM"
+                target="_blank"
+                rel="noreferrer"
+              >
+                GitHub
               </a>
+            </nav>
+          </div>
+        </header>
 
-              <nav className={styles.topbarLinks} aria-label="Primary">
-                <a href="#attacks">Attack Library</a>
-                <a href="#workflow">How It Works</a>
-                <a
-                  href="https://github.com/kaadipranav/WatchLLM"
-                  target="_blank"
-                  rel="noreferrer"
-                >
-                  GitHub
-                </a>
-              </nav>
-            </div>
-          </header>
-
+        <div className={styles.frame}>
           <main id="top">
             <section className={`${styles.hero} ${styles.container}`}>
               <div className={styles.heroCopy}>
