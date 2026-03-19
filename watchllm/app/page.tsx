@@ -1,4 +1,3 @@
-import Link from "next/link";
 import styles from "./page.module.css";
 import {
   LandingPageEffects,
@@ -311,21 +310,21 @@ export default function Home() {
                   data-reveal-state="visible"
                   style={{ ["--delay" as string]: "380ms" }}
                 >
-                  <Link
-                    href="/sign-up"
-                    className={`${styles.button} ${styles.primaryButton}`}
-                    data-ink-button
-                  >
-                    Start Attack Run
-                  </Link>
                   <a
                     href="https://github.com/kaadipranav/WatchLLM"
                     target="_blank"
                     rel="noreferrer"
-                    className={`${styles.button} ${styles.secondaryButton}`}
+                    className={`${styles.button} ${styles.primaryButton}`}
                     data-ink-button
                   >
                     Inspect GitHub
+                  </a>
+                  <a
+                    href="#workflow"
+                    className={`${styles.button} ${styles.secondaryButton}`}
+                    data-ink-button
+                  >
+                    See Failure Flow
                   </a>
                 </div>
 
