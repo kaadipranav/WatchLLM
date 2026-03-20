@@ -117,10 +117,14 @@
     .hero {
       display: grid;
       grid-template-columns: 1.02fr 0.98fr;
-      gap: 2rem;
+      gap: 2.6rem;
       min-height: calc(100vh - 74px);
       align-items: center;
-      padding: 3.6rem 0 2.8rem;
+      padding: 4rem 0 3.4rem;
+    }
+    .hero > :last-child {
+      overflow: hidden;
+      min-width: 0;
     }
     .kicker {
       color: #ffd3cd;
@@ -164,6 +168,13 @@
       font-size: 0.7rem;
     }
 
+    .terminal-shell {
+      padding: 0.95rem;
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      background: rgba(255, 255, 255, 0.01);
+      width: 100%;
+      max-width: 100%;
+    }
     .terminal {
       border: 1px solid var(--line);
       background:
@@ -172,6 +183,8 @@
       box-shadow: 0 30px 80px rgba(0, 0, 0, 0.45);
       overflow: hidden;
       position: relative;
+      width: 100%;
+      max-width: 100%;
     }
     .terminal::after {
       content: "";
@@ -316,6 +329,13 @@
     .section {
       padding-bottom: 5rem;
     }
+    .section-kicker {
+      color: #ffccbf;
+      text-transform: uppercase;
+      letter-spacing: 0.16em;
+      font-size: 0.66rem;
+      margin-bottom: 0.65rem;
+    }
     .section h2 {
       font-family: var(--display);
       font-size: clamp(2rem, 5.8vw, 3.8rem);
@@ -343,6 +363,12 @@
       min-height: 250px;
       display: grid;
       gap: 0.8rem;
+      position: relative;
+      border-left: 1px solid transparent;
+      transition: border-left-color 180ms ease;
+    }
+    .step:hover {
+      border-left: 3px solid var(--accent);
     }
     .step-icon {
       width: 2.8rem;
@@ -378,6 +404,117 @@
       white-space: pre-wrap;
       line-height: 1.55;
     }
+    .proof-grid {
+      display: grid;
+      grid-template-columns: 1.15fr 0.85fr;
+      gap: 1px;
+      border: 1px solid var(--line);
+      background: var(--line);
+    }
+    .proof-main, .proof-side {
+      background: var(--surface);
+      padding: 1.2rem;
+    }
+    .proof-main {
+      display: grid;
+      gap: 1rem;
+    }
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 1px;
+      background: var(--line);
+      border: 1px solid var(--line);
+    }
+    .stat {
+      background: rgba(255, 255, 255, 0.02);
+      padding: 0.9rem;
+    }
+    .stat label {
+      display: block;
+      color: var(--muted);
+      font-size: 0.62rem;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      margin-bottom: 0.35rem;
+    }
+    .stat strong {
+      color: #fff2ef;
+      font-size: 1.1rem;
+      font-family: var(--display);
+      letter-spacing: 0.01em;
+    }
+    .report {
+      border: 1px solid var(--line);
+      background: rgba(8, 11, 13, 0.84);
+      padding: 0.85rem;
+      line-height: 1.55;
+      color: #ffd7d0;
+      font-size: 0.73rem;
+      white-space: pre-wrap;
+    }
+    .proof-side {
+      display: grid;
+      gap: 0.8rem;
+      align-content: start;
+    }
+    .threat-item {
+      border: 1px solid var(--line);
+      background: rgba(255, 255, 255, 0.02);
+      padding: 0.75rem;
+      border-radius: 999px;
+    }
+    .threat-item h4 {
+      color: #ffe2dd;
+      font-size: 0.72rem;
+      text-transform: uppercase;
+      letter-spacing: 0.14em;
+      margin-bottom: 0.38rem;
+    }
+    .threat-item p {
+      color: var(--muted);
+      font-size: 0.76rem;
+      line-height: 1.6;
+    }
+    .cta-block {
+      border: 3px solid rgba(255, 255, 255, 0.16);
+      background: rgba(14, 19, 24, 0.95);
+      padding: 1.2rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 1rem;
+      flex-wrap: wrap;
+    }
+    .cta-block strong {
+      font-family: var(--display);
+      text-transform: uppercase;
+      font-size: clamp(1.2rem, 4vw, 2rem);
+      line-height: 0.95;
+      max-width: 20ch;
+    }
+    .cta-actions {
+      display: flex;
+      gap: 0.7rem;
+      flex-wrap: wrap;
+    }
+    .btn {
+      border: 1px solid var(--line);
+      text-transform: uppercase;
+      letter-spacing: 0.13em;
+      font-size: 0.67rem;
+      padding: 0.7rem 0.85rem;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 42px;
+    }
+    .btn.primary {
+      border-color: rgba(255, 77, 58, 0.55);
+      background: var(--accent);
+      color: #fff3f0;
+    }
+    .btn:hover { color: var(--text); }
 
     footer {
       border-top: 1px solid var(--line);
@@ -410,7 +547,7 @@
 
     @media (max-width: 1040px) {
       .hero { grid-template-columns: 1fr; min-height: auto; padding-top: 2.4rem; }
-      .term-body, .steps { grid-template-columns: 1fr; }
+      .term-body, .steps, .proof-grid, .stats { grid-template-columns: 1fr; }
       .term-stream { border-right: 0; border-bottom: 1px solid var(--line); }
     }
     @media (max-width: 700px) {
@@ -459,24 +596,26 @@
           </div>
         </div>
 
-        <section class="terminal reveal in" style="--delay:220ms;" aria-label="Live attack simulation terminal">
-          <div class="term-head">
-            <div class="dots" aria-hidden="true">
-              <span class="dot r"></span><span class="dot y"></span><span class="dot g"></span>
+        <div class="terminal-shell reveal in" style="--delay:220ms;">
+          <section class="terminal" aria-label="Live attack simulation terminal">
+            <div class="term-head">
+              <div class="dots" aria-hidden="true">
+                <span class="dot r"></span><span class="dot y"></span><span class="dot g"></span>
+              </div>
+              <div class="term-title">attack-session / support_agent_v2 / capture:f95b3</div>
+              <div id="statusBadge" class="status">armed</div>
             </div>
-            <div class="term-title">attack-session / support_agent_v2 / capture:f95b3</div>
-            <div id="statusBadge" class="status">armed</div>
-          </div>
-          <div class="term-body">
-            <div id="stream" class="term-stream" aria-live="polite"></div>
-            <aside class="metrics">
-              <div class="metric"><label>Current vector</label><strong id="mVector">Loadout sync</strong></div>
-              <div class="metric"><label>Rule tripped</label><strong id="mRule">None</strong></div>
-              <div class="metric"><label>Severity</label><strong id="mSeverity">Pending</strong></div>
-              <div class="metric"><label>Report note</label><strong id="mReport">Waiting for first breakage class to clear guardrails.</strong></div>
-            </aside>
-          </div>
-        </section>
+            <div class="term-body">
+              <div id="stream" class="term-stream" aria-live="polite"></div>
+              <aside class="metrics">
+                <div class="metric"><label>Current vector</label><strong id="mVector">Loadout sync</strong></div>
+                <div class="metric"><label>Rule tripped</label><strong id="mRule">None</strong></div>
+                <div class="metric"><label>Severity</label><strong id="mSeverity">Pending</strong></div>
+                <div class="metric"><label>Report note</label><strong id="mReport">Waiting for first breakage class to clear guardrails.</strong></div>
+              </aside>
+            </div>
+          </section>
+        </div>
       </section>
     </main>
 
@@ -498,36 +637,90 @@
     </section>
 
     <section id="how" class="container section reveal">
+      <div class="section-kicker">Execution Flow</div>
       <h2>How it works</h2>
-      <p class="lead">Three moves from "seems fine in staging" to "survives hostile input in prod."</p>
+      <p class="lead">Three moves from staging confidence to production confidence under adversarial pressure.</p>
       <div class="steps">
         <article class="step">
           <span class="step-icon" aria-hidden="true">01</span>
           <small>Wire decorator</small>
-          <h3>Attach to real runtime</h3>
-          <p>Add one decorator to the agent entrypoint. WatchLLM traces the live model + tool execution path without forcing a framework rewrite.</p>
+          <h3>Wire decorator</h3>
+          <p>Attach once at your real agent entrypoint. Capture the exact runtime behavior that reaches production.</p>
           <pre class="code">@chaos(key="sk_proj_xxx")
 def support_agent(query):</pre>
         </article>
         <article class="step">
           <span class="step-icon" aria-hidden="true">02</span>
-          <small>Define attack scenarios</small>
-          <h3>Select failure classes</h3>
-          <p>Choose adversarial suites for your blast radius, from injection and jailbreak pressure to tool misuse and state corruption.</p>
-          <pre class="code">attacks = [
-  "prompt_injection",
-  "goal_hijacking",
-  "tool_abuse"
-]</pre>
+          <small>Select attack classes</small>
+          <h3>Select attack classes</h3>
+          <p>Choose the adversarial classes that map to real risk: injection, objective drift, and unsafe tool execution.</p>
+          <pre class="code">attacks = ["prompt_injection", "goal_hijacking", "tool_abuse"]</pre>
         </article>
         <article class="step">
           <span class="step-icon" aria-hidden="true">03</span>
-          <small>Get failure reports</small>
+          <small>Gate deploy on breakage</small>
           <h3>Gate deploy on breakage</h3>
-          <p>Receive trace-linked autopsy reports with rule violations and severity. Block release until critical classes are fixed and rerun clean.</p>
+          <p>Fail the release when severe breakages are detected. Ship only when the attack run clears your threshold.</p>
           <pre class="code">watchllm test agent.py
 --fail-on "severity>=4"</pre>
         </article>
+      </div>
+    </section>
+
+    <section class="container section reveal">
+      <div class="section-kicker">Failure Intelligence</div>
+      <h2>Read the breakage path, not just a score.</h2>
+      <p class="lead">WatchLLM gives trace-level evidence your infra team can action: what attack entered, which rule failed, what tool call escaped, where to patch.</p>
+      <div class="proof-grid">
+        <div class="proof-main">
+          <div class="stats">
+            <div class="stat">
+              <label>Scenarios executed</label>
+              <strong>06 classes</strong>
+            </div>
+            <div class="stat">
+              <label>Critical failures</label>
+              <strong>01 confirmed</strong>
+            </div>
+            <div class="stat">
+              <label>Deploy verdict</label>
+              <strong>BLOCKED</strong>
+            </div>
+          </div>
+          <pre class="report">session_id: atk_9f31
+vector: goal_hijacking
+rule: unsafe_function_path
+tool_call: process_refund(amount=500, approve=true)
+severity: 5 / critical
+recommended_action:
+  - enforce tool arg schema constraints
+  - add objective lock between turns
+  - rerun scenario before merge</pre>
+        </div>
+        <aside class="proof-side">
+          <div class="threat-item">
+            <h4>Prompt Injection</h4>
+            <p>Catches hidden instruction override attempts before they mutate system intent.</p>
+          </div>
+          <div class="threat-item">
+            <h4>Memory Poisoning</h4>
+            <p>Finds corrupted memory that silently alters future agent decisions.</p>
+          </div>
+          <div class="threat-item">
+            <h4>Tool Abuse</h4>
+            <p>Flags unsafe tool calls and parameters that create production blast radius.</p>
+          </div>
+        </aside>
+      </div>
+    </section>
+
+    <section class="container section reveal">
+      <div class="cta-block">
+        <strong>Ship agents that fail in testing, not in production.</strong>
+        <div class="cta-actions">
+          <a class="btn primary" href="https://github.com/kaadipranav/WatchLLM" target="_blank" rel="noreferrer">Run attack suite</a>
+          <a class="btn" href="https://watchllm.dev" target="_blank" rel="noreferrer">Visit watchllm.dev</a>
+        </div>
       </div>
     </section>
 
