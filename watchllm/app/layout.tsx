@@ -16,8 +16,8 @@ export default function RootLayout({
 }>) {
   return (
     <ClerkProvider appearance={{ baseTheme: dark }}>
-      <html lang="en">
-        <body>
+      <html lang="en" suppressHydrationWarning>
+        <body suppressHydrationWarning>
           <div style={{ position: "relative", zIndex: 1 }}>{children}</div>
         </body>
       </html>
