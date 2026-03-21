@@ -270,7 +270,7 @@ export function SimulationProgressView({ simulationId }: Props) {
           "--glow-y": "50%",
           "--glow-intensity": "0",
           "--glow-radius": "350px",
-          "--glow-color": "140, 100, 255",
+          "--glow-color": "247, 59, 0",
         } as React.CSSProperties}
       >
         <div style={sectionTitleStyle}>Simulation Control</div>
@@ -441,7 +441,7 @@ export function SimulationProgressView({ simulationId }: Props) {
                     borderRadius: "var(--radius-sm)",
                     border: `1px solid ${severityColor(failure.severity)}`,
                     backgroundColor: isSelected
-                      ? "rgba(140, 92, 245, 0.06)"
+                      ? "rgba(247, 59, 0, 0.1)"
                       : "rgba(255,255,255,0.02)",
                     color: "var(--text-primary)",
                     cursor: "pointer",

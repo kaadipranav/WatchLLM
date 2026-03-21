@@ -1,16 +1,16 @@
-@import url("https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Geist:wght@300;400;500;600;700;800;900&family=Geist+Mono:wght@400;500&family=Inter:wght@100;200;300;400;500;600;700;800;900&family=IBM+Plex+Mono:wght@400;500;600;700&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Syne:wght@500;700;800&family=IBM+Plex+Mono:wght@400;500;600;700&display=swap");
 @import "tailwindcss";
 
 /* ============================================================
-   WatchLLM — Premium Dark Design System
-   Clean void + violet accent glow. No liquid background.
-   ============================================================ */
+  WatchLLM — Industrial Threat Lab Design System
+  Near-black grid + threat red accent + infrastructural tone.
+  ============================================================ */
 
 @theme {
   --color-base: #050505;
   --color-surface: #0c0c0e;
-  --color-accent: #8c5cf5;
-  --color-accent-dim: rgba(140, 92, 245, 0.15);
+  --color-accent: #f73b00;
+  --color-accent-dim: rgba(247, 59, 0, 0.15);
   --color-danger: #f5475c;
   --color-warning: #f5a623;
   --color-success: #34d399;
@@ -25,9 +25,9 @@
   --surface-3: #1a1a20;
 
   /* --- Accent --- */
-  --accent:     #8c5cf5;
-  --accent-dim: rgba(140, 92, 245, 0.15);
-  --accent-glow: rgba(140, 92, 245, 0.35);
+  --accent:     #f73b00;
+  --accent-dim: rgba(247, 59, 0, 0.15);
+  --accent-glow: rgba(247, 59, 0, 0.35);
 
   /* --- Semantic --- */
   --danger:  #f5475c;
@@ -44,8 +44,8 @@
   --border-faint:  rgba(255, 255, 255, 0.04);
 
   /* --- Typography --- */
-  --font-sans: "Neue Haas Grotesk", "Geist", "Inter", system-ui, -apple-system, sans-serif;
-  --font-mono: "Geist Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+  --font-sans: "Syne", system-ui, -apple-system, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
 
   /* --- Radius --- */
   --radius-sm: 8px;
@@ -87,7 +87,12 @@ body {
   position: relative;
   font-family: var(--font-sans);
   font-weight: 400;
-  background: var(--base);
+  background:
+    radial-gradient(circle at 50% 0%, rgba(247, 59, 0, 0.06), transparent 38%),
+    linear-gradient(var(--border-faint) 1px, transparent 1px),
+    linear-gradient(90deg, var(--border-faint) 1px, transparent 1px),
+    var(--base);
+  background-size: 100% 100%, 28px 28px, 28px 28px, 100% 100%;
   color: var(--text-primary);
   font-size: 14px;
   line-height: 1.6;
@@ -145,8 +150,8 @@ code, pre, .mono {
 }
 
 ::selection {
-  background: rgba(140, 92, 245, 0.3);
-  color: white;
+  background: rgba(247, 59, 0, 0.9);
+  color: #050505;
 }
 
 /* ============================================================
@@ -175,8 +180,8 @@ a[href] {
 }
 
 .card:hover {
-  border-color: rgba(140, 92, 245, 0.2);
-  box-shadow: 0 0 24px rgba(140, 92, 245, 0.06);
+  border-color: rgba(247, 59, 0, 0.28);
+  box-shadow: 0 0 24px rgba(247, 59, 0, 0.12);
 }
 
 /* ============================================================
@@ -198,8 +203,8 @@ a[href] {
   padding: 1px;
   background: radial-gradient(
     var(--glow-radius, 300px) circle at var(--glow-x, 50%) var(--glow-y, 50%),
-    rgba(var(--glow-color, 140, 100, 255), calc(var(--glow-intensity, 0) * 0.5)) 0%,
-    rgba(var(--glow-color, 140, 100, 255), calc(var(--glow-intensity, 0) * 0.2)) 30%,
+    rgba(var(--glow-color, 247, 59, 0), calc(var(--glow-intensity, 0) * 0.5)) 0%,
+    rgba(var(--glow-color, 247, 59, 0), calc(var(--glow-intensity, 0) * 0.2)) 30%,
     transparent 60%
   );
   border-radius: inherit;
@@ -212,8 +217,8 @@ a[href] {
 }
 
 .magic-bento:hover {
-  border-color: rgba(140, 92, 245, 0.15);
-  box-shadow: 0 4px 32px rgba(0, 0, 0, 0.3), 0 0 20px rgba(140, 92, 245, 0.08);
+  border-color: rgba(247, 59, 0, 0.24);
+  box-shadow: 0 4px 32px rgba(0, 0, 0, 0.3), 0 0 20px rgba(247, 59, 0, 0.12);
   transform: translateY(-2px);
 }
 
@@ -232,8 +237,8 @@ a[href] {
 
 .bento-card:hover {
   transform: translateY(-2px);
-  border-color: rgba(140, 92, 245, 0.15);
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3), 0 0 20px rgba(140, 92, 245, 0.06);
+  border-color: rgba(247, 59, 0, 0.2);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3), 0 0 20px rgba(247, 59, 0, 0.1);
 }
 
 /* ============================================================
@@ -274,9 +279,9 @@ button, .btn {
 }
 
 button:hover, .btn:hover {
-  background: rgba(140, 92, 245, 0.12);
-  border-color: rgba(140, 92, 245, 0.3);
-  box-shadow: 0 0 16px rgba(140, 92, 245, 0.1);
+  background: rgba(247, 59, 0, 0.12);
+  border-color: rgba(247, 59, 0, 0.35);
+  box-shadow: 0 0 16px rgba(247, 59, 0, 0.16);
   transform: translateY(-1px);
 }
 
@@ -319,8 +324,8 @@ button:active, .btn:active {
 }
 
 .btn-primary:hover {
-  background: #9d70ff;
-  box-shadow: 0 0 24px rgba(140, 92, 245, 0.35), 0 4px 16px rgba(0, 0, 0, 0.3);
+  background: #ff5f2f;
+  box-shadow: 0 0 24px rgba(247, 59, 0, 0.35), 0 4px 16px rgba(0, 0, 0, 0.3);
   transform: translateY(-2px);
   border-color: transparent;
 }
@@ -331,7 +336,7 @@ button:active, .btn:active {
 
 .btn-primary:active {
   transform: translateY(0) scale(0.97);
-  box-shadow: 0 0 12px rgba(140, 92, 245, 0.2);
+  box-shadow: 0 0 12px rgba(247, 59, 0, 0.2);
 }
 
 @keyframes btn-shine {
@@ -361,9 +366,9 @@ button:active, .btn:active {
 
 .btn-secondary:hover {
   color: #ffffff;
-  border-color: rgba(140, 92, 245, 0.4);
-  background: rgba(140, 92, 245, 0.08);
-  box-shadow: 0 0 16px rgba(140, 92, 245, 0.1);
+  border-color: rgba(247, 59, 0, 0.4);
+  background: rgba(247, 59, 0, 0.08);
+  box-shadow: 0 0 16px rgba(247, 59, 0, 0.14);
   transform: translateY(-1px);
 }
 
@@ -388,12 +393,12 @@ button:active, .btn:active {
   0%, 100% {
     opacity: 1;
     transform: scale(1);
-    box-shadow: 0 0 4px rgba(140, 92, 245, 0.4);
+    box-shadow: 0 0 4px rgba(247, 59, 0, 0.4);
   }
   50% {
     opacity: 0.6;
     transform: scale(1.4);
-    box-shadow: 0 0 10px rgba(140, 92, 245, 0.7);
+    box-shadow: 0 0 10px rgba(247, 59, 0, 0.7);
   }
 }
 
@@ -447,11 +452,11 @@ button:active, .btn:active {
   padding: 1px;
   background: conic-gradient(
     from var(--_pb-angle, 0deg),
-    rgba(140, 92, 245, 0.3),
-    rgba(100, 60, 200, 0.15),
-    rgba(140, 92, 245, 0.3),
-    rgba(100, 60, 200, 0.15),
-    rgba(140, 92, 245, 0.3)
+    rgba(247, 59, 0, 0.3),
+    rgba(153, 32, 0, 0.15),
+    rgba(247, 59, 0, 0.3),
+    rgba(153, 32, 0, 0.15),
+    rgba(247, 59, 0, 0.3)
   );
   -webkit-mask:
     linear-gradient(#fff 0 0) content-box,
@@ -491,15 +496,15 @@ button:active, .btn:active {
 }
 
 .cl-card {
-  background: rgba(13, 13, 26, 0.8) !important;
-  border: 1px solid #1a1a2e !important;
+  background: rgba(12, 12, 14, 0.88) !important;
+  border: 1px solid rgba(247, 59, 0, 0.2) !important;
   backdrop-filter: blur(20px);
   border-radius: 8px;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5), 0 0 24px rgba(247, 59, 0, 0.14);
 }
 
 .cl-headerTitle {
-  font-family: "Manrope", sans-serif !important;
+  font-family: "Syne", sans-serif !important;
   font-size: 28px !important;
   font-weight: 800 !important;
   letter-spacing: 0.02em !important;
@@ -510,7 +515,7 @@ button:active, .btn:active {
 .cl-headerSubtitle {
   font-family: "IBM Plex Mono", monospace !important;
   font-size: 12px !important;
-  color: #4a4a6a !important;
+  color: #8a8a93 !important;
   letter-spacing: 0.08em !important;
   text-transform: uppercase !important;
 }
@@ -525,8 +530,8 @@ button:active, .btn:active {
 }
 
 .cl-input {
-  background: rgba(26, 26, 46, 0.6) !important;
-  border: 1px solid #1a1a2e !important;
+  background: rgba(20, 20, 24, 0.8) !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
   color: #ffffff !important;
   border-radius: 4px !important;
   font-family: "IBM Plex Mono", monospace !important;
@@ -535,18 +540,18 @@ button:active, .btn:active {
 }
 
 .cl-input:focus {
-  background: rgba(26, 26, 46, 0.8) !important;
-  border-color: rgba(124, 110, 247, 0.5) !important;
-  box-shadow: 0 0 12px rgba(124, 110, 247, 0.2) !important;
+  background: rgba(20, 20, 24, 0.95) !important;
+  border-color: rgba(247, 59, 0, 0.55) !important;
+  box-shadow: 0 0 12px rgba(247, 59, 0, 0.2) !important;
 }
 
 .cl-input::placeholder {
-  color: #4a4a6a !important;
+  color: #6e6e77 !important;
 }
 
 .cl-button {
-  background: #7c6ef7 !important;
-  border: 1px solid #7c6ef7 !important;
+  background: #f73b00 !important;
+  border: 1px solid #f73b00 !important;
   color: #ffffff !important;
   font-family: "IBM Plex Mono", monospace !important;
   font-size: 12px !important;
@@ -558,9 +563,9 @@ button:active, .btn:active {
 }
 
 .cl-button:hover {
-  background: #a594ff !important;
-  border-color: #a594ff !important;
-  box-shadow: 0 0 20px rgba(124, 110, 247, 0.3) !important;
+  background: #ff5f2f !important;
+  border-color: #ff5f2f !important;
+  box-shadow: 0 0 20px rgba(247, 59, 0, 0.3) !important;
   transform: translateY(-2px) !important;
 }
 
@@ -571,29 +576,29 @@ button:active, .btn:active {
 .cl-dividerText {
   font-family: "IBM Plex Mono", monospace !important;
   font-size: 11px !important;
-  color: #4a4a6a !important;
+  color: #8a8a93 !important;
   letter-spacing: 0.05em !important;
 }
 
 .cl-divider {
-  background: #1a1a2e !important;
+  background: rgba(255, 255, 255, 0.12) !important;
 }
 
 .cl-socialButton {
-  background: rgba(26, 26, 46, 0.6) !important;
-  border: 1px solid #1a1a2e !important;
+  background: rgba(20, 20, 24, 0.8) !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
   color: #ffffff !important;
   border-radius: 4px !important;
   transition: all 200ms ease !important;
 }
 
 .cl-socialButton:hover {
-  background: rgba(124, 110, 247, 0.1) !important;
-  border-color: rgba(124, 110, 247, 0.3) !important;
+  background: rgba(247, 59, 0, 0.1) !important;
+  border-color: rgba(247, 59, 0, 0.3) !important;
 }
 
 .cl-link {
-  color: #a594ff !important;
+  color: #ff8f6d !important;
   text-decoration: none !important;
   transition: color 150ms ease !important;
   font-family: "IBM Plex Mono", monospace !important;
@@ -614,10 +619,10 @@ button:active, .btn:active {
 }
 
 .cl-checkbox {
-  border-color: #1a1a2e !important;
+  border-color: rgba(255, 255, 255, 0.18) !important;
 }
 
 .cl-checkbox:checked {
-  background: #7c6ef7 !important;
-  border-color: #7c6ef7 !important;
+  background: #f73b00 !important;
+  border-color: #f73b00 !important;
 }

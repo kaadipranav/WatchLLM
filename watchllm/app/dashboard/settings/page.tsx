@@ -157,10 +157,16 @@ export default function SettingsPage() {
 
   return (
     <div style={{ padding: "0" }}>
-      <div style={{ marginBottom: "40px", borderBottom: "1px solid #1a1a2e", paddingBottom: "20px" }}>
+      <div
+        style={{
+          marginBottom: "40px",
+          borderBottom: "1px solid rgba(247,59,0,0.22)",
+          paddingBottom: "20px",
+        }}
+      >
         <h1
           style={{
-            fontFamily: "'Manrope',sans-serif",
+            fontFamily: "var(--font-sans)",
             fontSize: "42px",
             fontWeight: 800,
             letterSpacing: "0.02em",
@@ -175,7 +181,7 @@ export default function SettingsPage() {
           style={{
             fontFamily: "'IBM Plex Mono',monospace",
             fontSize: "12px",
-            color: "#4a4a6a",
+            color: "var(--text-muted)",
             letterSpacing: "0.08em",
             textTransform: "uppercase",
           }}
@@ -194,8 +200,8 @@ export default function SettingsPage() {
           fontFamily: "'IBM Plex Mono',monospace",
           fontSize: "13px",
           color: "#8a8a93",
-          background: "rgba(124,110,247,0.02)",
-          border: "1px solid rgba(124,110,247,0.1)",
+          background: "rgba(247,59,0,0.03)",
+          border: "1px solid rgba(247,59,0,0.2)",
           display: "grid",
           gap: "16px",
           letterSpacing: "0.02em",
@@ -210,7 +216,7 @@ export default function SettingsPage() {
             placeholder="Project name (e.g. My Agent v1)"
             style={{
               background: "rgba(15,15,35,0.7)",
-              border: "1px solid #1a1a2e",
+              border: "1px solid rgba(255,255,255,0.1)",
               color: "#fff",
               padding: "10px 12px",
               borderRadius: "4px",
@@ -222,9 +228,9 @@ export default function SettingsPage() {
             onClick={handleCreateProject}
             disabled={projectBusy || !projectName.trim()}
             style={{
-              border: "1px solid rgba(124,110,247,0.5)",
-              background: "rgba(124,110,247,0.15)",
-              color: "#c4b6ff",
+              border: "1px solid rgba(247,59,0,0.5)",
+              background: "rgba(247,59,0,0.16)",
+              color: "#ffb39c",
               borderRadius: "4px",
               padding: "10px 18px",
               fontFamily: "'IBM Plex Mono',monospace",
@@ -281,8 +287,8 @@ export default function SettingsPage() {
           fontFamily: "'IBM Plex Mono',monospace",
           fontSize: "13px",
           color: "#8a8a93",
-          background: "rgba(124,110,247,0.02)",
-          border: "1px solid rgba(124,110,247,0.1)",
+          background: "rgba(247,59,0,0.03)",
+          border: "1px solid rgba(247,59,0,0.2)",
           display: "grid",
           gap: "16px",
           letterSpacing: "0.02em",
@@ -296,7 +302,7 @@ export default function SettingsPage() {
             placeholder="Key Name"
             style={{
               background: "rgba(15,15,35,0.7)",
-              border: "1px solid #1a1a2e",
+              border: "1px solid rgba(255,255,255,0.1)",
               color: "#fff",
               padding: "10px 12px",
               borderRadius: "4px",
@@ -310,7 +316,7 @@ export default function SettingsPage() {
             placeholder="Project SDK Key (sk_proj_...)"
             style={{
               background: "rgba(15,15,35,0.7)",
-              border: "1px solid #1a1a2e",
+              border: "1px solid rgba(255,255,255,0.1)",
               color: "#fff",
               padding: "10px 12px",
               borderRadius: "4px",
@@ -324,7 +330,7 @@ export default function SettingsPage() {
             placeholder="Expiry days"
             style={{
               background: "rgba(15,15,35,0.7)",
-              border: "1px solid #1a1a2e",
+              border: "1px solid rgba(255,255,255,0.1)",
               color: "#fff",
               padding: "10px 12px",
               borderRadius: "4px",
@@ -336,9 +342,9 @@ export default function SettingsPage() {
             onClick={handleCreate}
             disabled={busy || !name.trim() || !sdkKey.trim()}
             style={{
-              border: "1px solid rgba(124,110,247,0.5)",
-              background: "rgba(124,110,247,0.15)",
-              color: "#c4b6ff",
+              border: "1px solid rgba(247,59,0,0.5)",
+              background: "rgba(247,59,0,0.16)",
+              color: "#ffb39c",
               borderRadius: "4px",
               padding: "10px 14px",
               fontFamily: "'IBM Plex Mono',monospace",
@@ -384,7 +390,7 @@ export default function SettingsPage() {
           </div>
         ) : null}
 
-        <div style={{ borderTop: "1px solid #1a1a2e", paddingTop: "14px" }}>
+        <div style={{ borderTop: "1px solid rgba(247,59,0,0.22)", paddingTop: "14px" }}>
           <div
             style={{
               color: "#6c6c8a",
@@ -412,7 +418,7 @@ export default function SettingsPage() {
                     gap: "10px",
                     alignItems: "center",
                     padding: "10px 12px",
-                    border: "1px solid #1a1a2e",
+                    border: "1px solid rgba(255,255,255,0.1)",
                     borderRadius: "4px",
                     background: "rgba(15,15,35,0.35)",
                   }}

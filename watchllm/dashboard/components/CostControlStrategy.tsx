@@ -26,7 +26,7 @@ export function CostControlStrategy({ estimatedRuns }: Props) {
         "--glow-y": "50%",
         "--glow-intensity": "0",
         "--glow-radius": "350px",
-        "--glow-color": "140, 100, 255",
+        "--glow-color": "247, 59, 0",
       } as React.CSSProperties}
     >
       <div

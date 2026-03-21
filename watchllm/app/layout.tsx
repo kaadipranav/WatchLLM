@@ -15,7 +15,16 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <ClerkProvider appearance={{ baseTheme: dark }}>
+    <ClerkProvider
+      appearance={{
+        baseTheme: dark,
+        variables: {
+          colorPrimary: "#f73b00",
+          colorDanger: "#f5475c",
+          fontFamily: '"IBM Plex Mono", monospace',
+        },
+      }}
+    >
       <html lang="en" suppressHydrationWarning>
         <body suppressHydrationWarning>
           <div style={{ position: "relative", zIndex: 1 }}>{children}</div>

@@ -30,10 +30,16 @@ const STATUS_COLOR: Record<string, string> = {
 // ──────────────────────────────────────────────────────
 function PageHeader({ count }: { count: number }) {
   return (
-    <div style={{ marginBottom: "40px", borderBottom: "1px solid #1a1a2e", paddingBottom: "20px" }}>
+    <div
+      style={{
+        marginBottom: "40px",
+        borderBottom: "1px solid rgba(247,59,0,0.22)",
+        paddingBottom: "20px",
+      }}
+    >
       <h1
         style={{
-          fontFamily: "'Manrope',sans-serif",
+          fontFamily: "var(--font-sans)",
           fontSize: "42px",
           fontWeight: 800,
           letterSpacing: "0.02em",
@@ -48,7 +54,7 @@ function PageHeader({ count }: { count: number }) {
         style={{
           fontFamily: "'IBM Plex Mono',monospace",
           fontSize: "12px",
-          color: "#4a4a6a",
+          color: "var(--text-muted)",
           letterSpacing: "0.08em",
           textTransform: "uppercase",
         }}
@@ -85,9 +91,9 @@ function CopyPill() {
         alignItems: "center",
         gap: "12px",
         background: hover
-          ? "rgba(124,110,247,0.1)"
-          : "rgba(124,110,247,0.05)",
-        border: "1px solid rgba(124,110,247,0.3)",
+          ? "rgba(247,59,0,0.14)"
+          : "rgba(247,59,0,0.06)",
+        border: "1px solid rgba(247,59,0,0.34)",
         borderRadius: "4px",
         padding: "10px 16px",
         cursor: "default",
@@ -100,7 +106,7 @@ function CopyPill() {
         style={{
           fontFamily: "'IBM Plex Mono',monospace",
           fontSize: "11px",
-          color: "#a594ff",
+          color: "var(--accent)",
           userSelect: "all",
           letterSpacing: "0.05em",
         }}
@@ -117,7 +123,7 @@ function CopyPill() {
           cursor: "pointer",
           display: "flex",
           alignItems: "center",
-          color: copied ? "#39d98a" : "#7c6ef7",
+          color: copied ? "var(--success)" : "var(--accent)",
           transition: "color 150ms ease",
         }}
       >
@@ -145,8 +151,8 @@ function EmptyState() {
         justifyContent: "center",
         gap: "28px",
         textAlign: "center",
-        background: "rgba(124,110,247,0.02)",
-        border: "1px solid rgba(124,110,247,0.1)",
+        background: "rgba(247,59,0,0.03)",
+        border: "1px solid rgba(247,59,0,0.2)",
       }}
     >
       <div>
@@ -199,9 +205,11 @@ function SimulationRow({
         justifyContent: "space-between",
         width: "100%",
         background: isActive
-          ? "rgba(124,110,247,0.1)"
+          ? "rgba(247,59,0,0.12)"
           : "rgba(26,26,46,0.4)",
-        border: isActive ? "1px solid rgba(124,110,247,0.5)" : "1px solid #1a1a2e",
+        border: isActive
+          ? "1px solid rgba(247,59,0,0.45)"
+          : "1px solid rgba(255,255,255,0.08)",
         borderRadius: "4px",
         padding: "14px 16px",
         cursor: "pointer",
@@ -230,7 +238,7 @@ function SimulationRow({
           style={{
             fontFamily: "'IBM Plex Mono',monospace",
             fontSize: "10px",
-            color: "#4a4a6a",
+            color: "var(--text-muted)",
             letterSpacing: "0.02em",
           }}
         >
@@ -301,7 +309,7 @@ export default function DashboardPage() {
           style={{
             fontFamily: "'IBM Plex Mono',monospace",
             fontSize: "12px",
-            color: "#4a4a6a",
+            color: "var(--text-muted)",
             letterSpacing: "0.08em",
             textTransform: "uppercase",
           }}

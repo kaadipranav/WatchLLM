@@ -73,7 +73,7 @@ const suggestedFixStyle: React.CSSProperties = {
 function severityColor(severity: number): string {
   if (severity <= 2) return "rgba(255,255,255,0.45)";
   if (severity === 3) return "#FFCC00";
-  return "#FF2A8C"; // Cyber-Plasma Liquid Void: hot magenta
+  return "#f73b00";
 }
 
 export function FailureReplayViewer({ simulationId, runId }: Props) {
@@ -128,7 +128,7 @@ export function FailureReplayViewer({ simulationId, runId }: Props) {
     return (
       <section className="bento-card plasma-border" style={containerStyle}>
         <div style={titleStyle}>Failure Replay</div>
-        <div style={{ fontSize: "0.85rem", color: "#FF2A8C" }}>{error}</div>
+        <div style={{ fontSize: "0.85rem", color: "#f73b00" }}>{error}</div>
       </section>
     );
   }
@@ -202,7 +202,9 @@ export function FailureReplayViewer({ simulationId, runId }: Props) {
               style={{
                 padding: "0.75rem 0.85rem",
                 borderBottom: "1px solid rgba(255,255,255,0.08)",
-                backgroundColor: isBreaking ? "rgba(255, 42, 140, 0.08)" : "rgba(10, 10, 10, 0.6)",
+                backgroundColor: isBreaking
+                  ? "rgba(247, 59, 0, 0.1)"
+                  : "rgba(10, 10, 10, 0.6)",
               }}
             >
               <div
@@ -220,7 +222,7 @@ export function FailureReplayViewer({ simulationId, runId }: Props) {
                   <span
                     style={{
                       fontSize: "0.75rem",
-                      color: "#FF2A8C",
+                      color: "#f73b00",
                       textTransform: "uppercase",
                       letterSpacing: "0.08em",
                     }}

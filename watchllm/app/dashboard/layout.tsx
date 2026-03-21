@@ -6,7 +6,14 @@ export default function DashboardLayout({
   children: React.ReactNode;
 }) {
   return (
-    <div style={{ display: "flex", minHeight: "100vh", background: "#080810" }}>
+    <div
+      style={{
+        display: "flex",
+        minHeight: "100vh",
+        background:
+          "radial-gradient(circle at 50% 0%, rgba(247,59,0,0.06), transparent 40%), #050506",
+      }}
+    >
       <Sidebar />
       <main
         style={{
@@ -14,7 +21,7 @@ export default function DashboardLayout({
           padding: "32px 40px",
           overflowY: "auto",
           maxHeight: "100vh",
-          background: "#080810",
+          background: "transparent",
         }}
       >
         <div className="page-fade">

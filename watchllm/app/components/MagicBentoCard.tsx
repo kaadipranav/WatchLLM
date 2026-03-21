@@ -12,7 +12,7 @@ import React, { useRef, useEffect, useCallback } from "react";
      ✓ Click ripple
    ────────────────────────────────────────────────────────────── */
 
-const GLOW_COLOR = "140, 100, 255"; // muted violet
+const GLOW_COLOR = "247, 59, 0";
 const SPOTLIGHT_RADIUS = 350;
 
 function updateCardGlow(

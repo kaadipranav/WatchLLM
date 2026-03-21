@@ -3,17 +3,17 @@ import { SignUp } from "@clerk/nextjs";
 const clerkAppearance = {
   baseTheme: "dark" as const,
   variables: {
-    colorPrimary: "#7c6ef7",
+    colorPrimary: "#f73b00",
     colorTextOnPrimaryBackground: "#ffffff",
-    colorBackground: "rgba(13, 13, 26, 0.8)",
-    colorInputBackground: "rgba(26, 26, 46, 0.6)",
+    colorBackground: "rgba(12, 12, 14, 0.88)",
+    colorInputBackground: "rgba(20, 20, 24, 0.8)",
     colorInputText: "#ffffff",
     colorText: "#ffffff",
     colorTextSecondary: "#8a8a93",
     colorDanger: "#f5475c",
     colorSuccess: "#39d98a",
     colorWarning: "#ffa600",
-    colorNeutral: "#1a1a2e",
+    colorNeutral: "#1e1e24",
     fontFamily: '"IBM Plex Mono", monospace',
     fontSize: "13px",
     borderRadius: "4px",
@@ -43,7 +43,9 @@ export default function SignUpPage() {
     <div
       style={{
         minHeight: "100vh",
-        background: "linear-gradient(135deg, #080810 0%, #0d0d1a 50%, #080810 100%)",
+        background:
+          "radial-gradient(circle at 50% 0%, rgba(247,59,0,0.08), transparent 40%), linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px), #050506",
+        backgroundSize: "100% 100%, 28px 28px, 28px 28px, 100% 100%",
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
@@ -61,7 +63,7 @@ export default function SignUpPage() {
           transform: "translate(-50%, -50%)",
           width: "600px",
           height: "600px",
-          background: "radial-gradient(ellipse, rgba(124,110,247,0.08) 0%, transparent 70%)",
+          background: "radial-gradient(ellipse, rgba(247,59,0,0.12) 0%, transparent 70%)",
           pointerEvents: "none",
         }}
       />

@@ -5,10 +5,16 @@ import { MagicBentoCard } from "../../components/MagicBentoCard";
 export default function AgentsPage() {
   return (
     <div style={{ padding: "0" }}>
-      <div style={{ marginBottom: "40px", borderBottom: "1px solid #1a1a2e", paddingBottom: "20px" }}>
+      <div
+        style={{
+          marginBottom: "40px",
+          borderBottom: "1px solid rgba(247,59,0,0.22)",
+          paddingBottom: "20px",
+        }}
+      >
         <h1
           style={{
-            fontFamily: "'Manrope',sans-serif",
+            fontFamily: "var(--font-sans)",
             fontSize: "42px",
             fontWeight: 800,
             letterSpacing: "0.02em",
@@ -23,7 +29,7 @@ export default function AgentsPage() {
           style={{
             fontFamily: "'IBM Plex Mono',monospace",
             fontSize: "12px",
-            color: "#4a4a6a",
+            color: "var(--text-muted)",
             letterSpacing: "0.08em",
             textTransform: "uppercase",
           }}
@@ -38,8 +44,8 @@ export default function AgentsPage() {
           fontSize: "13px",
           color: "#8a8a93",
           textAlign: "center",
-          background: "rgba(124,110,247,0.02)",
-          border: "1px solid rgba(124,110,247,0.1)",
+          background: "rgba(247,59,0,0.03)",
+          border: "1px solid rgba(247,59,0,0.2)",
           display: "flex",
           alignItems: "center",
           justifyContent: "center",

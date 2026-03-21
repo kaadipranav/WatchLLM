@@ -55,12 +55,12 @@ export default function SimulatePage() {
         style={{
           display: "flex",
           height: "100vh",
-          background: "#07070f",
+          background: "#050506",
           alignItems: "center",
           justifyContent: "center",
           fontFamily: "'IBM Plex Mono',monospace",
           fontSize: "12px",
-          color: "#4a4a6a",
+          color: "var(--text-muted)",
           letterSpacing: "0.08em",
           textTransform: "uppercase",
         }}
@@ -75,7 +75,8 @@ export default function SimulatePage() {
       style={{
         display: "flex",
         minHeight: "100vh",
-        background: "#07070f",
+        background:
+          "radial-gradient(circle at 50% 0%, rgba(247,59,0,0.06), transparent 40%), #050506",
       }}
     >
       <Sidebar />
@@ -90,13 +91,13 @@ export default function SimulatePage() {
         <div
           style={{
             marginBottom: "32px",
-            borderBottom: "1px solid #1a1a2e",
+            borderBottom: "1px solid rgba(247,59,0,0.22)",
             paddingBottom: "20px",
           }}
         >
           <h1
             style={{
-              fontFamily: "'Manrope',sans-serif",
+              fontFamily: "var(--font-sans)",
               fontSize: "42px",
               fontWeight: 800,
               letterSpacing: "0.02em",
@@ -111,7 +112,7 @@ export default function SimulatePage() {
             style={{
               fontFamily: "'IBM Plex Mono',monospace",
               fontSize: "11px",
-              color: "#4a4a6a",
+              color: "var(--text-muted)",
               letterSpacing: "0.08em",
               textTransform: "uppercase",
             }}

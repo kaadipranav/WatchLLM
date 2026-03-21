@@ -48,11 +48,13 @@ export function Sidebar() {
             ? "rgba(255,255,255,0.6)"
             : "rgba(255,255,255,0.4)",
           background: isActive
-            ? "rgba(26,26,46,0.8)"
+            ? "rgba(247,59,0,0.14)"
             : isHovered
-            ? "rgba(26,26,46,0.5)"
+            ? "rgba(247,59,0,0.08)"
             : "transparent",
-          border: isActive ? "1px solid rgba(124,110,247,0.4)" : "1px solid transparent",
+          border: isActive
+            ? "1px solid rgba(247,59,0,0.45)"
+            : "1px solid transparent",
           borderRadius: "4px",
           textDecoration: "none",
           cursor: "pointer",
@@ -75,8 +77,8 @@ export function Sidebar() {
         flexDirection: "column",
         padding: "24px 16px",
         flexShrink: 0,
-        background: "#0d0d1a",
-        borderRight: "1px solid #1a1a2e",
+        background: "rgba(10,10,12,0.94)",
+        borderRight: "1px solid rgba(247,59,0,0.2)",
       }}
     >
       {/* Wordmark */}
@@ -89,7 +91,7 @@ export function Sidebar() {
           padding: "12px 8px",
           marginBottom: "28px",
           textDecoration: "none",
-          borderBottom: "1px solid #1a1a2e",
+          borderBottom: "1px solid rgba(247,59,0,0.18)",
         }}
       >
         <span
@@ -99,7 +101,7 @@ export function Sidebar() {
             fontWeight: 800,
             fontSize: "13px",
             letterSpacing: "0.08em",
-            color: "#a594ff",
+            color: "var(--accent)",
             textTransform: "uppercase",
           }}
         >
@@ -116,7 +118,7 @@ export function Sidebar() {
       <div
         style={{
           height: "1px",
-          background: "#1a1a2e",
+          background: "rgba(247,59,0,0.18)",
           margin: "12px 0",
         }}
       />
