@@ -7,6 +7,7 @@ export default function DashboardLayout({
 }) {
   return (
     <div
+      className="dashboard-shell"
       style={{
         display: "flex",
         minHeight: "100vh",
@@ -16,6 +17,7 @@ export default function DashboardLayout({
     >
       <Sidebar />
       <main
+        className="dashboard-main"
         style={{
           flex: 1,
           padding: "32px 40px",

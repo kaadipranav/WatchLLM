@@ -30,6 +30,7 @@ export function Sidebar() {
     return (
       <Link
         key={item.href}
+        className="dashboard-sidebar-link"
         href={item.href}
         onMouseEnter={() => setHovered(item.href)}
         onMouseLeave={() => setHovered(null)}
@@ -63,7 +64,7 @@ export function Sidebar() {
           marginBottom: "4px",
         }}
       >
-        {item.label}
+        <span className="dashboard-sidebar-label">{item.label}</span>
       </Link>
     );
   };
@@ -96,6 +97,7 @@ export function Sidebar() {
         }}
       >
         <span
+          className="dashboard-wordmark-text"
           style={{
             display: "inline-block",
             fontFamily: "'Manrope',sans-serif",
@@ -152,6 +154,7 @@ export function Sidebar() {
           }}
         />
         <span
+          className="dashboard-account-label"
           style={{
             fontFamily: "var(--font-mono)",
             fontSize: "11px",
