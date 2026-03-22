@@ -4,17 +4,9 @@ import { dark } from "@clerk/themes";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  metadataBase: new URL("https://watchllm.dev"),
-  title: {
-    default: "WatchLLM — Agent reliability, from first run to production.",
-    template: "%s — WatchLLM",
-  },
+  title: "WatchLLM - Chaos Monkey for AI Agents",
   description:
-    "Stress test. Replay. Fix. Ship. The agent reliability platform for stress-testing agents, graph replay, and fork-and-replay debugging.",
-  openGraph: {
-    type: "website",
-    siteName: "WatchLLM",
-  },
+    "Pre-deployment chaos testing for AI agents. Targeted adversarial attacks across 6 failure categories.",
 };
 
 export default function RootLayout({

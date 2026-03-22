@@ -16,14 +16,13 @@ type SimulationSummary = {
   created_at: string;
 };
 
-const CLI_COMMAND = "watchllm attack my_agent.py";
+const CLI_COMMAND = "watchllm attack --agent your-agent.py";
 
 const STATUS_COLOR: Record<string, string> = {
-  queued: "var(--text-muted)",
-  running: "var(--accent)",
-  completed: "var(--success)",
-  failed: "var(--danger)",
-  cancelled: "var(--warning)",
+  running:  "var(--accent)",
+  failed:   "var(--danger)",
+  passed:   "var(--success)",
+  complete: "var(--success)",
 };
 
 // ──────────────────────────────────────────────────────
@@ -179,11 +178,6 @@ function EmptyState() {
 // ──────────────────────────────────────────────────────
 // Simulation row card
 // ──────────────────────────────────────────────────────
-function normalizeSimulationStatus(status: string): string {
-  if (status === "complete" || status === "passed") return "completed";
-  return status;
-}
-
 function SimulationRow({
   sim,
   index,
@@ -196,8 +190,7 @@ function SimulationRow({
   onClick: () => void;
 }) {
   const [visible, setVisible] = useState(false);
-  const statusLabel = normalizeSimulationStatus(sim.status);
-  const accentColor = STATUS_COLOR[statusLabel] ?? "var(--text-muted)";
+  const accentColor = STATUS_COLOR[sim.status] ?? "var(--text-muted)";
 
   useEffect(() => {
     const t = setTimeout(() => setVisible(true), index * 40);
@@ -267,7 +260,7 @@ function SimulationRow({
           fontWeight: 600,
         }}
       >
-        {statusLabel}
+        {sim.status}
       </span>
     </button>
   );

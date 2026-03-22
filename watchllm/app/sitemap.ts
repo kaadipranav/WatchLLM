@@ -20,11 +20,5 @@ export default function sitemap(): MetadataRoute.Sitemap {
       changeFrequency: "monthly",
       priority: 0.8,
     },
-    {
-      url: "https://watchllm.dev/docs",
-      lastModified: new Date(),
-      changeFrequency: "weekly",
-      priority: 0.7,
-    },
   ];
 }
