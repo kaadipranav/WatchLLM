@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useAuth } from "@clerk/nextjs";
+import Link from "next/link";
 import { MagicBentoCard } from "../../components/MagicBentoCard";
 
 type ApiKeyRow = {
@@ -26,12 +27,6 @@ export default function SettingsPage() {
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
-  // Project creation state
-  const [projectName, setProjectName] = useState("");
-  const [createdProject, setCreatedProject] = useState<{ name: string; sdk_key: string } | null>(null);
-  const [projectError, setProjectError] = useState<string | null>(null);
-  const [projectBusy, setProjectBusy] = useState(false);
-
   const fetchKeys = async () => {
     setLoading(true);
     setError(null);
@@ -44,7 +39,6 @@ export default function SettingsPage() {
       });
       if (!res.ok) {
         const payload = await res.json().catch(() => ({}));
-        console.error("DEBUG /api/keys Failed", res.status, payload);
         throw new Error(payload?.detail || "Failed to load API keys");
       }
       const payload = await res.json();
@@ -123,38 +117,6 @@ export default function SettingsPage() {
     }
   };
 
-  const handleCreateProject = async () => {
-    setProjectBusy(true);
-    setProjectError(null);
-    setCreatedProject(null);
-    try {
-      const token = await getToken();
-      const res = await fetch("/api/projects", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({ name: projectName.trim() }),
-      });
-      const payload = await res.json().catch(() => ({}));
-      if (!res.ok) {
-        console.error("DEBUG /api/projects Failed", res.status, payload);
-        throw new Error(payload?.detail || "Failed to create project");
-      }
-      if (typeof payload?.sdk_key === "string") {
-        setCreatedProject({ name: payload.name, sdk_key: payload.sdk_key });
-        // Pre-fill the SDK key field for the API key creation form below
-        setSdkKey(payload.sdk_key);
-        setProjectName("");
-      }
-    } catch (err) {
-      setProjectError(err instanceof Error ? err.message : "Failed to create project");
-    } finally {
-      setProjectBusy(false);
-    }
-  };
-
   return (
     <div style={{ padding: "0" }}>
       <div
@@ -186,98 +148,49 @@ export default function SettingsPage() {
             textTransform: "uppercase",
           }}
         >
-          ACCOUNT, API KEYS & PREFERENCES
+          ACCOUNT, API KEYS & ACCESS
         </p>
       </div>
 
-      {/* ── Create Project ──────────────────────────────────── */}
-      <div style={{ marginBottom: "10px", fontSize: "11px", color: "#6c6c8a", textTransform: "uppercase", letterSpacing: "0.08em", fontFamily: "'IBM Plex Mono',monospace" }}>
-        Projects
-      </div>
       <MagicBentoCard
         style={{
-          padding: "24px",
+          padding: "18px 20px",
           fontFamily: "'IBM Plex Mono',monospace",
-          fontSize: "13px",
+          fontSize: "12px",
           color: "#8a8a93",
           background: "rgba(247,59,0,0.03)",
           border: "1px solid rgba(247,59,0,0.2)",
-          display: "grid",
-          gap: "16px",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
           letterSpacing: "0.02em",
-          lineHeight: 1.6,
+          lineHeight: 1.7,
           marginBottom: "24px",
         }}
       >
-        <div style={{ display: "grid", gap: "10px", gridTemplateColumns: "1fr auto" }}>
-          <input
-            value={projectName}
-            onChange={(e) => setProjectName(e.target.value)}
-            placeholder="Project name (e.g. My Agent v1)"
-            style={{
-              background: "rgba(15,15,35,0.7)",
-              border: "1px solid rgba(255,255,255,0.1)",
-              color: "#fff",
-              padding: "10px 12px",
-              borderRadius: "4px",
-              fontFamily: "'IBM Plex Mono',monospace",
-              fontSize: "12px",
-            }}
-          />
-          <button
-            onClick={handleCreateProject}
-            disabled={projectBusy || !projectName.trim()}
-            style={{
-              border: "1px solid rgba(247,59,0,0.5)",
-              background: "rgba(247,59,0,0.16)",
-              color: "#ffb39c",
-              borderRadius: "4px",
-              padding: "10px 18px",
-              fontFamily: "'IBM Plex Mono',monospace",
-              fontSize: "11px",
-              textTransform: "uppercase",
-              letterSpacing: "0.08em",
-              cursor: projectBusy || !projectName.trim() ? "not-allowed" : "pointer",
-            }}
-          >
-            {projectBusy ? "Creating..." : "Create Project"}
-          </button>
+        <div>
+          Project creation moved to Projects. Create SDK keys there, then use them below for API key issuance.
         </div>
-
-        {createdProject ? (
-          <div
-            style={{
-              border: "1px solid rgba(57,217,138,0.35)",
-              background: "rgba(57,217,138,0.08)",
-              borderRadius: "4px",
-              padding: "12px",
-              color: "#a9ffd3",
-            }}
-          >
-            <div style={{ marginBottom: "6px", fontSize: "11px", textTransform: "uppercase", letterSpacing: "0.08em" }}>
-              Project &quot;{createdProject.name}&quot; created — copy your SDK key now, it won&apos;t be shown again
-            </div>
-            <code style={{ fontSize: "12px", wordBreak: "break-all" }}>{createdProject.sdk_key}</code>
-          </div>
-        ) : null}
-
-        {projectError ? (
-          <div
-            style={{
-              border: "1px solid rgba(245,71,92,0.35)",
-              background: "rgba(245,71,92,0.08)",
-              borderRadius: "4px",
-              padding: "10px 12px",
-              color: "#ff8c98",
-              fontSize: "12px",
-            }}
-          >
-            {projectError}
-          </div>
-        ) : null}
+        <Link
+          href="/dashboard/projects"
+          style={{
+            border: "1px solid rgba(247,59,0,0.5)",
+            background: "rgba(247,59,0,0.16)",
+            color: "#ffb39c",
+            borderRadius: "4px",
+            padding: "9px 14px",
+            fontFamily: "'IBM Plex Mono',monospace",
+            fontSize: "11px",
+            textTransform: "uppercase",
+            letterSpacing: "0.08em",
+            textDecoration: "none",
+            whiteSpace: "nowrap",
+          }}
+        >
+          Open Projects
+        </Link>
       </MagicBentoCard>
 
-      {/* ── API Keys ────────────────────────────────────────── */}
       <div style={{ marginBottom: "10px", fontSize: "11px", color: "#6c6c8a", textTransform: "uppercase", letterSpacing: "0.08em", fontFamily: "'IBM Plex Mono',monospace" }}>
         API Keys
       </div>
@@ -369,7 +282,7 @@ export default function SettingsPage() {
             }}
           >
             <div style={{ marginBottom: "8px", fontSize: "11px", textTransform: "uppercase", letterSpacing: "0.08em" }}>
-              Copy Now - this key is shown once
+              Copy now - this key is shown once
             </div>
             <code style={{ fontSize: "12px", wordBreak: "break-all" }}>{createdKey}</code>
           </div>

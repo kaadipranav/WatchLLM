@@ -545,10 +545,19 @@ def _resolve_authenticated_user(
     )
     users = _supabase_fetch_json(users_endpoint, service_role_key)
     if not isinstance(users, list) or len(users) == 0:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Authenticated user is not provisioned",
+        # Backfill users who signed in before webhook delivery or when webhook setup is pending.
+        _insert_user(
+            supabase_url,
+            service_role_key,
+            clerk_id,
+            None,
         )
+        users = _supabase_fetch_json(users_endpoint, service_role_key)
+        if not isinstance(users, list) or len(users) == 0:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Authenticated user is not provisioned",
+            )
 
     user_id = users[0].get("id")
     if not isinstance(user_id, str) or not user_id:
@@ -1541,7 +1550,24 @@ async def list_simulations(request: Request):
     endpoint = (
         f"{supabase_url}/rest/v1/simulations"
         f"?user_id=eq.{user_id_filter}"
-        f"&select=id,status,severity_score,total_runs,failed_runs,created_at,config"
+        f"&select=id,agent_id,status,severity_score,total_runs,failed_runs,created_at,config"
+        f"&order=created_at.desc"
+    )
+    rows = _supabase_fetch_json(endpoint, service_role_key)
+    return rows if isinstance(rows, list) else []
+
+
+@app.get("/api/projects")
+async def list_projects(request: Request):
+    """Return all projects for the authenticated user, newest first."""
+    supabase_url, service_role_key = _get_supabase_admin_config()
+    user_id, _ = _resolve_authenticated_user(request, supabase_url, service_role_key)
+
+    user_id_filter = parse.quote(user_id, safe="")
+    endpoint = (
+        f"{supabase_url}/rest/v1/projects"
+        f"?user_id=eq.{user_id_filter}"
+        f"&select=id,name,created_at"
         f"&order=created_at.desc"
     )
     rows = _supabase_fetch_json(endpoint, service_role_key)
