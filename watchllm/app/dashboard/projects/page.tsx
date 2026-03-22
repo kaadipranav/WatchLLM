@@ -97,9 +97,9 @@ export default function ProjectsPage() {
         }}
       >
         <h1
+          className="dashboard-headline"
           style={{
             fontFamily: "var(--font-sans)",
-            fontSize: "42px",
             fontWeight: 800,
             letterSpacing: "0.02em",
             marginBottom: "12px",
@@ -123,10 +123,9 @@ export default function ProjectsPage() {
       </div>
 
       <div
+        className="dashboard-grid-2"
         style={{
-          display: "grid",
           gap: "20px",
-          gridTemplateColumns: "2fr 1fr",
           alignItems: "start",
         }}
       >
@@ -151,7 +150,7 @@ export default function ProjectsPage() {
             Create Project
           </div>
 
-          <div style={{ display: "grid", gap: "10px", gridTemplateColumns: "1fr auto" }}>
+          <div className="dashboard-form-row" style={{ display: "grid", gap: "10px" }}>
             <input
               value={name}
               onChange={(e) => setName(e.target.value)}
@@ -261,9 +260,9 @@ export default function ProjectsPage() {
                 {projects.map((project) => (
                   <div
                     key={project.id}
+                    className="dashboard-grid-2"
                     style={{
                       display: "grid",
-                      gridTemplateColumns: "2fr 1fr",
                       gap: "10px",
                       padding: "10px 12px",
                       border: "1px solid rgba(255,255,255,0.1)",

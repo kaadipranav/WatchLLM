@@ -127,9 +127,9 @@ export default function SettingsPage() {
         }}
       >
         <h1
+          className="dashboard-headline"
           style={{
             fontFamily: "var(--font-sans)",
-            fontSize: "42px",
             fontWeight: 800,
             letterSpacing: "0.02em",
             marginBottom: "12px",
@@ -153,6 +153,7 @@ export default function SettingsPage() {
       </div>
 
       <MagicBentoCard
+        className="dashboard-banner"
         style={{
           padding: "18px 20px",
           fontFamily: "'IBM Plex Mono',monospace",
@@ -160,9 +161,6 @@ export default function SettingsPage() {
           color: "#8a8a93",
           background: "rgba(247,59,0,0.03)",
           border: "1px solid rgba(247,59,0,0.2)",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
           letterSpacing: "0.02em",
           lineHeight: 1.7,
           marginBottom: "24px",
@@ -208,7 +206,7 @@ export default function SettingsPage() {
           lineHeight: 1.6,
         }}
       >
-        <div style={{ display: "grid", gap: "10px", gridTemplateColumns: "2fr 2fr 1fr auto" }}>
+        <div className="dashboard-form-row-keys" style={{ display: "grid", gap: "10px" }}>
           <input
             value={name}
             onChange={(e) => setName(e.target.value)}
@@ -325,9 +323,9 @@ export default function SettingsPage() {
               {keys.map((key) => (
                 <div
                   key={key.id}
+                  className="dashboard-grid-4"
                   style={{
                     display: "grid",
-                    gridTemplateColumns: "1.5fr 2fr 1.5fr auto",
                     gap: "10px",
                     alignItems: "center",
                     padding: "10px 12px",

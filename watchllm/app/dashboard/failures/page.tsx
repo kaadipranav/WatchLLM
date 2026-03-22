@@ -75,9 +75,9 @@ export default function FailuresPage() {
         }}
       >
         <h1
+          className="dashboard-headline"
           style={{
             fontFamily: "var(--font-sans)",
-            fontSize: "42px",
             fontWeight: 800,
             letterSpacing: "0.02em",
             marginBottom: "12px",
@@ -101,9 +101,8 @@ export default function FailuresPage() {
       </div>
 
       <div
+        className="dashboard-grid-3"
         style={{
-          display: "grid",
-          gridTemplateColumns: "repeat(3, minmax(0, 1fr))",
           gap: "12px",
           marginBottom: "20px",
         }}
@@ -143,7 +142,7 @@ export default function FailuresPage() {
         ))}
       </div>
 
-      <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr", gap: "12px" }}>
+      <div className="dashboard-grid-2" style={{ display: "grid", gap: "12px" }}>
         <MagicBentoCard
           style={{
             padding: "20px",
@@ -183,13 +182,13 @@ export default function FailuresPage() {
                 return (
                   <div
                     key={sim.id}
+                    className="dashboard-grid-4"
                     style={{
                       border: "1px solid rgba(255,255,255,0.1)",
                       borderRadius: "6px",
                       background: "rgba(15,15,35,0.35)",
                       padding: "12px",
                       display: "grid",
-                      gridTemplateColumns: "2fr 1fr 1fr 1fr",
                       gap: "10px",
                       alignItems: "center",
                     }}
