@@ -76,8 +76,8 @@ export function CostControlStrategy({ estimatedRuns }: Props) {
         }}
       >
         Sandbox Mode strongly recommended: route all tool calls to a safe test
-        environment so agents cannot trigger real-world actions during chaos
-        simulations.
+        environment so agents cannot trigger real-world actions during
+        stress-test simulations.
       </div>
     </section>
   );

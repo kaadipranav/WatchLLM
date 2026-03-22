@@ -170,7 +170,7 @@ export default function FailuresPage() {
             </div>
           ) : riskySimulations.length === 0 ? (
             <div style={{ color: "#8a8a93", fontFamily: "'IBM Plex Mono',monospace", fontSize: "12px", lineHeight: 1.7 }}>
-              No high-risk runs yet. Once simulations produce failures, this queue will prioritize what to replay first.
+              No failures detected yet. Run a simulation to find out.
             </div>
           ) : (
             <div style={{ display: "grid", gap: "8px" }}>

@@ -1,8 +1,10 @@
 import re
 import html
 import codecs
+from pathlib import Path
 
-with open(r'd:\PRANAV APPS\WatchLLM - Chaos Monkey for AI Agents\watchllm_landing_v3.html', 'r', encoding='utf-8') as f:
+_ROOT = Path(__file__).resolve().parent
+with open(_ROOT / "watchllm-landing-rebuild.html", "r", encoding="utf-8") as f:
     text = f.read()
 
 # Extract parts
@@ -110,6 +112,6 @@ export default function Home() {{
 }}
 '''
 
-with codecs.open(r'd:\PRANAV APPS\WatchLLM - Chaos Monkey for AI Agents\watchllm\app\page.tsx', 'w', encoding='utf-8') as out:
+with codecs.open(_ROOT / "watchllm" / "app" / "page.tsx", "w", encoding="utf-8") as out:
     out.write(tsx_out)
 print('TSX written properly.')

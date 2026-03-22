@@ -1,4 +1,4 @@
-# WatchLLM — Chaos Monkey for AI Agents
+# WatchLLM — Agent reliability platform
 ## Master Context Document (Source of Truth for GitHub Copilot)
 
 > **COPILOT RULE #1: Do not invent database columns, API routes, file paths, or environment variable names. If something is not specified in this document, stop and ask before building it.**
@@ -8,7 +8,7 @@
 
 ## 1. What Is WatchLLM
 
-WatchLLM is pre-deployment chaos testing for AI agents.
+WatchLLM is an agent reliability platform for pre-deployment stress testing of AI agents.
 
 Developers connect their agent via a one-line SDK decorator. WatchLLM fires thousands of targeted adversarial attacks across 6 failure categories before the agent ships to production. They get a structured failure report, a visual replay of every failure, and a severity score per category.
 
@@ -400,7 +400,7 @@ SENTRY_AUTH_TOKEN=
 **Week 1 — Core Infrastructure**
 - Supabase schema (exact tables above, nothing extra)
 - Clerk auth + webhook sync to users table
-- Landing page copy: *"Chaos Monkey for AI Agents — Simulate 1,000 disasters before production"*
+- Landing page copy: *"Agent reliability, from first run to production — Stress test. Replay. Fix. Ship."*
 - SDK skeleton: decorator that captures system prompt + registers agent
 
 **Week 2 — The Engine**

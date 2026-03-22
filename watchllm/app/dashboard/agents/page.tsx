@@ -192,7 +192,7 @@ export default function AgentsPage() {
           </div>
         ) : agents.length === 0 ? (
           <div style={{ color: "#8a8a93", fontFamily: "'IBM Plex Mono',monospace", fontSize: "12px", lineHeight: 1.7 }}>
-            No agents found yet. Create a project, register an agent through the SDK, then run a simulation to populate this view.
+            No agents registered. Use the SDK to register your first agent.
           </div>
         ) : (
           <div style={{ display: "grid", gap: "8px" }}>

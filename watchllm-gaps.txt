@@ -1,7 +1,7 @@
 ================================================================================
 WATCHLLM — GAP TRACKER
 Last updated: 2026-03-07 (rev 2)
-Repo root: d:\PRANAV APPS\WatchLLM - Chaos Monkey for AI Agents\
+Repo root: (local workspace) / WatchLLM
 ================================================================================
 
 Legend: [P1] = must-have before spec is met

@@ -16,13 +16,14 @@ type SimulationSummary = {
   created_at: string;
 };
 
-const CLI_COMMAND = "watchllm attack --agent your-agent.py";
+const CLI_COMMAND = "watchllm attack my_agent.py";
 
 const STATUS_COLOR: Record<string, string> = {
-  running:  "var(--accent)",
-  failed:   "var(--danger)",
-  passed:   "var(--success)",
-  complete: "var(--success)",
+  queued: "var(--text-muted)",
+  running: "var(--accent)",
+  completed: "var(--success)",
+  failed: "var(--danger)",
+  cancelled: "var(--warning)",
 };
 
 // ──────────────────────────────────────────────────────
@@ -166,7 +167,8 @@ function EmptyState() {
             letterSpacing: "0.02em",
           }}
         >
-          No simulations found. Launch your first chaos test from the CLI.
+          No simulations found. Run your first reliability simulation from the
+          CLI.
         </p>
       </div>
       <CopyPill />
@@ -177,6 +179,11 @@ function EmptyState() {
 // ──────────────────────────────────────────────────────
 // Simulation row card
 // ──────────────────────────────────────────────────────
+function normalizeSimulationStatus(status: string): string {
+  if (status === "complete" || status === "passed") return "completed";
+  return status;
+}
+
 function SimulationRow({
   sim,
   index,
@@ -189,7 +196,8 @@ function SimulationRow({
   onClick: () => void;
 }) {
   const [visible, setVisible] = useState(false);
-  const accentColor = STATUS_COLOR[sim.status] ?? "var(--text-muted)";
+  const statusLabel = normalizeSimulationStatus(sim.status);
+  const accentColor = STATUS_COLOR[statusLabel] ?? "var(--text-muted)";
 
   useEffect(() => {
     const t = setTimeout(() => setVisible(true), index * 40);
@@ -259,7 +267,7 @@ function SimulationRow({
           fontWeight: 600,
         }}
       >
-        {sim.status}
+        {statusLabel}
       </span>
     </button>
   );

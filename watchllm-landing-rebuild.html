@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>WatchLLM | Chaos Monkey for AI Agents</title>
+    <title>WatchLLM — Agent reliability, from first run to production.</title>
     
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -331,8 +331,8 @@
     <section class="hero container">
         <div class="hero-content reveal">
             <div class="sys-badge"><i></i> SYSTEM LIVE</div>
-            <h1>Chaos Monkey<br>for <span class="text-accent">AI Agents</span></h1>
-            <p>Production AI fails in unpredictable ways. WatchLLM is an adversarial infrastructure SDK that injects mutations, goal-hijacks, and state corruptions to stress-test your pipelines before deployment.</p>
+            <h1>Agent reliability,<br>from <span class="text-accent">first run to production</span></h1>
+            <p>Stress test. Replay. Fix. Ship. WatchLLM is an agent reliability platform—stress-test failure modes, replay runs as graphs, fork from any node.</p>
             <div class="hero-actions">
                 <a href="/sign-up" target="_top" class="btn-primary" data-text="START SIMULATION">Start simulation <i class="ph-bold ph-arrow-right"></i></a>
                 <a href="/docs" target="_top" class="btn-secondary">Read The Docs</a>
@@ -390,21 +390,12 @@
                         <div class="cw-title">watchllm_init.py</div>
                     </div>
                     <div class="cw-body">
-<pre><code><span class="c-kwd">import</span> os
-<span class="c-kwd">from</span> watchllm <span class="c-kwd">import</span> ChaosMonkey
-<span class="c-kwd">from</span> langchain.agents <span class="c-kwd">import</span> AgentExecutor
+<pre><code><span class="c-kwd">from</span> watchllm <span class="c-kwd">import</span> chaos
 
-<span class="c-cmt"># 1. Bind WatchLLM to your orchestration layer</span>
-monkey = ChaosMonkey(target=<span class="c-str">"production_bot"</span>)
-
-<span class="c-cmt"># 2. Inject adversarial vectors on execution</span>
-<span class="c-dec">@monkey.inject_chaos(</span>
-    vectors=[<span class="c-str">"jailbreak"</span>, <span class="c-str">"data_exfil"</span>],
-    intensity=<span class="c-num">0.85</span>,
-    track_memory=True
-<span class="c-dec">)</span>
-<span class="c-kwd">def</span> <span class="c-func">run_agent</span>(prompt: str):
-    <span class="c-kwd">return</span> executor.run(prompt)</code></pre>
+<span class="c-dec">@chaos(</span>key=<span class="c-str">"sk_proj_xxx"</span><span class="c-dec">)</span>
+<span class="c-kwd">def</span> <span class="c-func">my_agent</span>(input: str) -> str:
+    <span class="c-cmt"># your agent code here</span>
+    ...</code></pre>
                     </div>
                 </div>
             </div>

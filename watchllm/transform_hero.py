@@ -31,7 +31,8 @@ hook_logic = """
 
 text = text.replace('const termBodyRef = useRef<HTMLDivElement>(null);', 'const termBodyRef = useRef<HTMLDivElement>(null);\n' + hook_logic)
 
-old_h1 = '<h1 className="h1">CHAOS<br /><span className="line-accent">MONKEY</span><br />FOR <span className="line-blue">AI.</span></h1>'
+# Legacy hero markup (no longer present in app/page.tsx; script is archival)
+old_h1 = '<h1 className="h1">LEGACY<br /><span className="line-accent">HERO</span><br />PLACEHOLDER</h1>'
 
 new_h1 = """<h1 className="h1" style={{ fontSize: "clamp(3.5rem, 6.5vw, 6.2rem)", lineHeight: "1.05", marginBottom: "1.5rem" }}>
       BREAK YOUR<br />AGENTS BEFORE<br /><span className="line-blue" style={{ position: "relative" }}>

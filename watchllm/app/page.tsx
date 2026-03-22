@@ -1,23 +1,27 @@
-import { readFile } from "node:fs/promises";
-import path from "node:path";
+import type { Metadata } from "next";
+import { LandingPage } from "./components/landing/LandingPage";
 
-export const dynamic = "force-dynamic";
+const title = "WatchLLM — Agent reliability, from first run to production.";
+const description =
+  "Stress test. Replay. Fix. Ship. The agent reliability platform: stress-test failure modes, graph replay every run, fork and replay from any node.";
 
-export default async function Home() {
-  const htmlPath = path.join(process.cwd(), "index.html");
-  const html = await readFile(htmlPath, "utf-8");
+export const metadata: Metadata = {
+  title: { absolute: title },
+  description,
+  openGraph: {
+    title,
+    description,
+    url: "https://watchllm.dev",
+    siteName: "WatchLLM",
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title,
+    description,
+  },
+};
 
-  return (
-    <iframe
-      title="WatchLLM landing page"
-      srcDoc={html}
-      style={{
-        width: "100%",
-        minHeight: "100vh",
-        border: "0",
-        display: "block",
-        background: "transparent",
-      }}
-    />
-  );
+export default function Home() {
+  return <LandingPage />;
 }

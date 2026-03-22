@@ -27,7 +27,7 @@ def my_agent(input: str) -> str:
 Create `.github/workflows/watchllm.yml` in your repository:
 
 ```yaml
-name: WatchLLM Chaos Tests
+name: WatchLLM Reliability Tests
 
 on:
   push:
@@ -35,7 +35,7 @@ on:
   pull_request:
 
 jobs:
-  chaos-tests:
+  reliability-tests:
     runs-on: ubuntu-latest
     env:
       WATCHLLM_API_KEY: ${{ secrets.WATCHLLM_API_KEY }}
@@ -54,7 +54,7 @@ jobs:
       - name: Install WatchLLM
         run: pip install -e .
 
-      - name: Run WatchLLM chaos tests
+      - name: Run WatchLLM reliability tests
         run: watchllm test my_agent.py --fail-on "severity>=4"
 ```
 
